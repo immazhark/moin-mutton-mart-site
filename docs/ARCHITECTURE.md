@@ -1,7 +1,7 @@
 # Moin Mutton Mart — architecture and build brief
 
 Date: 25 November 2026
-Status: architecture accepted as planning direction; free-tier implementation plan prepared. Visual design selection pending. No implementation, provisioning or deployment claimed.
+Status: architecture accepted as planning direction; free-tier implementation plan prepared. B + C hybrid visual direction approved; see DESIGN_DIRECTION.md. No implementation, provisioning or deployment claimed.
 Canonical repository: https://github.com/immazhark/moin-mutton-mart-site
 Domain: https://moinmuttonmart.in — purchased through Spaceship.
 
@@ -41,7 +41,7 @@ Not launch scope: payments, customer accounts, stock reservation/decrement, driv
 
 ## 4. Art direction and mobile layout
 
-Direction proposal: contemporary Mallepally butcher's counter. Existing gold crest, charcoal brand frame, warm ivory product areas, restrained antique gold, confident headings and exceptionally readable shopping text. Avoid an entirely black screen of repeated gold-bordered cards, gratuitous gradients, tiny labels or decorative motion that delays shopping.
+Approved direction: B + C hybrid. Compact charcoal header with existing gold crest, white cards on cool pale gray, maroon selected categories and green add/review/WhatsApp actions. Gold is reserved for branding. See DESIGN_DIRECTION.md.
 
 Customer first viewport: compact logo/location header, short service message, visible categories and beginning of catalogue. No full-screen hero hiding products. Desktop may have a wider editorial introduction while retaining quick access to catalogue.
 
@@ -53,7 +53,7 @@ Adding an item with choices opens an accessible bottom sheet; quantities are pro
 
 Mobile safe-area padding, keyboard handling, comfortable touch targets (44px minimum proposed), visible focus, useful back behaviour, focus return after sheets, reduced motion and adequate contrast are mandatory. Keep primary flow practical at 320–430 CSS px. Desktop remains supported.
 
-Before product implementation, present three coherent visual concepts showing mobile catalogue, order review and owner editing; choose one. Text direction here is not a selected visual mockup.
+The user reviewed the three concepts and approved the B + C hybrid. Implement against DESIGN_DIRECTION.md.
 
 ## 5. Photo workflow
 

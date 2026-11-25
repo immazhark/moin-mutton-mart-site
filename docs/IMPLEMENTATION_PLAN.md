@@ -19,7 +19,7 @@
 - Customer accounts, online payments, stock reservation and automated WhatsApp sending are excluded.
 - No production data writes from preview builds; no private identities or credentials in public git.
 - Real photos require approved derivatives; placeholders clearly identified in development.
-- Three visual concepts and user selection precede product UI implementation. Architecture planning is approved; visual selection remains pending.
+- Three visual concepts and user selection precede product UI implementation. Architecture planning is approved; B + C hybrid visual selection approved.
 
 ## Review focus
 
@@ -138,4 +138,4 @@ Files: Cloudflare deployment config, docs/OPERATIONS.md, docs/IMPLEMENTATION_STA
 
 Task 1 visual selection precedes Task 3 UI. Task 2 precedes Tasks 3/4. Task 4 precedes Task 5 and live integration in Task 6. Task 7 can progress on confirmed content independently; Task 8 requires owner inputs and account access. Continue unblocked work while checks run; essential failures block integration, not unrelated work.
 
-No implementation is claimed by this document. Next deliverable: three visual concepts and a public-safe repository foundation. Native execution is recommended for this compact connected project, with focused independent review at security/integration milestones if authorised.
+B + C selected. Storefront preview and domain foundation implemented; consult IMPLEMENTATION_STATUS.md for verified and pending work. Native execution is recommended for this compact connected project, with focused independent review at security/integration milestones if authorised.
