@@ -1,26 +1,136 @@
-import {useEffect,useRef,useState} from 'react';
-import {products} from '../data/products';
-import {buildWhatsAppUrl,formatQuantity,formatRequest,type Selection} from '../lib/order/order';
-import {encodeDraft,decodeDraft} from '../lib/order/storage';
-const categories=['All','Mutton','Chicken','Speciality cuts'];
-export default function Catalogue(){
- const [category,setCategory]=useState('All'),[items,setItems]=useState<Selection[]>([]),[fulfilment,setFulfilment]=useState('Discuss with shop'),[note,setNote]=useState(''),[feedback,setFeedback]=useState('');
- const [restored,setRestored]=useState(false);
- useEffect(()=>{try{setItems(decodeDraft(localStorage.getItem('moin-request-v1'),products));}catch{/* Storage unavailable: continue in memory. */}setRestored(true);},[]);
- useEffect(()=>{if(restored){try{localStorage.setItem('moin-request-v1',encodeDraft(items));}catch{/* No persistence available. */}}},[items,restored]);
- const dialog=useRef<HTMLDialogElement>(null);const opener=useRef<HTMLButtonElement>(null);
- function change(id:string,delta:number){const p=products.find(p=>p.id===id)!;setItems(prev=>{const old=prev.find(s=>s.productId===id);const quantity=(old?.quantity??0)+delta*p.step;if(quantity<=0)return prev.filter(s=>s.productId!==id);if(quantity>p.max)return prev;return old?prev.map(s=>s.productId===id?{...s,quantity}:s):[...prev,{productId:id,quantity,note:''}];});}
- function close(){dialog.current?.close();opener.current?.focus();}
- const message=items.length?formatRequest(products,items,fulfilment,note):'';
- return <section id="catalogue" className="catalogue"><div className="section-heading"><div><p className="eyebrow">BROWSE THE COUNTER</p><h2>What’s on your list?</h2></div><span className="rate-note">Ask for today’s rate</span></div>
- <div className="categories" aria-label="Product categories">{categories.map(c=><button key={c} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}</div>
- <div className="product-grid">{products.filter(p=>category==='All'||p.category===category).map(p=>{const selected=items.find(s=>s.productId===p.id);return <article className="product-card" key={p.id}><div className="product-photo" aria-label="Product photograph pending"><span className="cut-symbol" aria-hidden="true">{p.category==='Chicken'?'C':p.category==='Mutton'?'M':'S'}</span><span>Product photo coming soon</span></div><div className="product-content"><p className="product-category">{p.category}</p><h3>{p.name}</h3><p className="quantity-hint">Request by {p.unit==='g'?'weight':p.unit} · shop confirms</p><div className="card-bottom"><span className="ask-rate">Ask for rate</span>{selected?<div className="stepper"><button aria-label={`Reduce ${p.name}`} onClick={()=>change(p.id,-1)}>−</button><output aria-live="polite">{formatQuantity(p,selected.quantity)}</output><button aria-label={`Increase ${p.name}`} disabled={selected.quantity>=p.max} onClick={()=>change(p.id,1)}>+</button></div>:<button className="add" aria-label={`Add ${p.name}`} onClick={()=>change(p.id,1)}>ADD <span aria-hidden="true">+</span></button>}</div></div></article>;})}</div>
- <p className="range-note">This is our enquiry range. The shop confirms which cuts and quantities are available.</p>
- {items.length>0&&<div className="review-bar"><div><strong>{items.length} {items.length===1?'item':'items'} selected</strong><small>Rates need confirmation</small></div><button ref={opener} onClick={()=>{setFeedback('');dialog.current?.showModal()}}>Review request <span aria-hidden="true">→</span></button></div>}
- <dialog ref={dialog} className="review-dialog" onCancel={e=>{e.preventDefault();close()}} onClose={()=>opener.current?.focus()}><div className="dialog-header"><div><p className="eyebrow">ONE LAST LOOK</p><h2>Your request</h2></div><button className="close" aria-label="Close review" onClick={close}>×</button></div>
- {items.length===0?<div className="empty"><h3>Your list is empty.</h3><p>Add a cut to start a new request.</p><button className="primary" onClick={close}>Back to the counter</button></div>:<><p className="review-explainer">No payment here. Send your list and the shop will confirm the details.</p>{items.map(s=>{const p=products.find(p=>p.id===s.productId)!;return <div className="review-item" key={p.id}><div className="review-item-title"><h3>{p.name}</h3><button className="remove" aria-label={`Remove ${p.name}`} onClick={()=>setItems(items.filter(i=>i.productId!==p.id))}>Remove</button></div><div className="stepper"><button aria-label={`Reduce requested ${p.name}`} onClick={()=>change(p.id,-1)}>−</button><output>{formatQuantity(p,s.quantity)}</output><button aria-label={`Increase requested ${p.name}`} disabled={s.quantity>=p.max} onClick={()=>change(p.id,1)}>+</button></div><label>Cut preference <span>(optional)</span><input maxLength={200} value={s.note} placeholder="e.g. medium curry pieces" onChange={e=>setItems(items.map(i=>i.productId===p.id?{...i,note:e.target.value}:i))}/></label></div>;})}
- <label>Pickup or delivery preference<select value={fulfilment} onChange={e=>setFulfilment(e.target.value)}><option>Discuss with shop</option><option>Pickup</option><option>Delivery enquiry</option></select></label><label>Order note <span>(optional)</span><textarea maxLength={400} value={note} onChange={e=>setNote(e.target.value)} placeholder="Anything else the shop should know?"/></label>
- <div className="confirmation"><strong>Final details confirmed by the shop</strong><p>Rates, availability, actual weight, total and delivery timing need confirmation. Opening WhatsApp does not place or confirm an order.</p></div>
- <a className="primary whatsapp" href={buildWhatsAppUrl(message)} target="_blank" rel="noopener noreferrer">Continue on WhatsApp ↗</a><small className="destination">To Moin Mutton Mart · +91 81437 30054</small><div className="fallbacks"><button onClick={async()=>{try{await navigator.clipboard.writeText(message);setFeedback('Request copied. Paste it into your conversation with the shop.')}catch{setFeedback('Copy unavailable. Select and copy the request below.')}}}>Copy request</button><a href="tel:+918143730054">Call instead</a></div><p role="status">{feedback}</p>{feedback.startsWith('Copy unavailable')&&<textarea aria-label="Request to copy" readOnly value={message}/>}</>}
- </dialog></section>;
+import { Search, ShoppingBasket } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { categories, products } from '../data/products';
+import type { Selection } from '../lib/order/order';
+import { STORAGE_KEY, decodeDraft, encodeDraft } from '../lib/order/storage';
+import ProductCard from './ProductCard';
+import ReviewSheet from './ReviewSheet';
+
+export default function Catalogue() {
+  const [category, setCategory] = useState<(typeof categories)[number]>('All');
+  const [query, setQuery] = useState('');
+  const [items, setItems] = useState<Selection[]>([]);
+  const [restored, setRestored] = useState(false);
+  const startedAt = useRef(0);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const opener = useRef<HTMLButtonElement>(null);
+
+  // Restore once. Storage can be denied or corrupt; the basket then simply starts empty.
+  useEffect(() => {
+    try {
+      const draft = decodeDraft(localStorage.getItem(STORAGE_KEY), products);
+      if (draft) {
+        startedAt.current = draft.startedAt;
+        setItems(draft.items);
+      }
+    } catch {
+      /* continue in memory */
+    }
+    setRestored(true);
+  }, []);
+
+  // Persist without moving the retention clock: it starts with the first item only.
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      if (items.length === 0) {
+        startedAt.current = 0;
+        localStorage.removeItem(STORAGE_KEY);
+      } else {
+        startedAt.current ||= Date.now();
+        localStorage.setItem(STORAGE_KEY, encodeDraft(items, startedAt.current));
+      }
+    } catch {
+      /* no persistence available */
+    }
+  }, [items, restored]);
+
+  function change(id: string, delta: -1 | 1) {
+    const p = products.find((x) => x.id === id)!;
+    setItems((prev) => {
+      const old = prev.find((s) => s.productId === id);
+      const quantity = (old?.quantity ?? 0) + delta * p.step;
+      if (quantity <= 0) return prev.filter((s) => s.productId !== id);
+      if (quantity > p.max) return prev;
+      return old ? prev.map((s) => (s.productId === id ? { ...s, quantity } : s)) : [...prev, { productId: id, quantity, note: '' }];
+    });
+  }
+
+  // Sheet: Back closes it instead of leaving the page, and the page behind does not scroll.
+  function openSheet() {
+    history.pushState({ sheet: true }, '');
+    document.body.classList.add('sheet-open');
+    dialog.current?.showModal();
+  }
+  function onSheetClosed() {
+    document.body.classList.remove('sheet-open');
+    if (history.state?.sheet) history.back();
+    opener.current?.focus();
+  }
+  useEffect(() => {
+    const onPop = () => dialog.current?.open && dialog.current.close();
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const q = query.trim().toLowerCase();
+  const visible = products.filter(
+    (p) => (category === 'All' || p.category === category) && (!q || p.name.toLowerCase().includes(q)),
+  );
+  const count = items.length;
+
+  return (
+    <section id="catalogue" className="catalogue" aria-labelledby="shop-title">
+      <div className="shop-head">
+        <h1 id="shop-title">Choose your cuts</h1>
+        <p className="status">Rates confirmed by the shop</p>
+      </div>
+
+      <label className="search">
+        <Search size={18} aria-hidden="true" />
+        <span className="sr-only">Search the range</span>
+        <input type="search" placeholder="Search the range" value={query} onChange={(e) => setQuery(e.target.value)} />
+      </label>
+
+      <div className="categories" role="group" aria-label="Categories">
+        {categories.map((c) => (
+          <button key={c} type="button" aria-pressed={category === c} onClick={() => setCategory(c)}>
+            {c}
+          </button>
+        ))}
+      </div>
+
+      {visible.length ? (
+        <div className="product-grid">
+          {visible.map((p) => (
+            <ProductCard key={p.id} product={p} quantity={items.find((s) => s.productId === p.id)?.quantity} onChange={change} />
+          ))}
+        </div>
+      ) : (
+        <p className="no-results">Nothing in the range matches “{query}”. Try another word or call the shop.</p>
+      )}
+
+      {count > 0 && (
+        <div className="basket-bar">
+          <ShoppingBasket size={22} aria-hidden="true" />
+          <span>
+            {count} {count === 1 ? 'item' : 'items'}
+          </span>
+          <button ref={opener} type="button" onClick={openSheet}>
+            Review request
+          </button>
+        </div>
+      )}
+
+      <ReviewSheet
+        dialogRef={dialog}
+        products={products}
+        items={items}
+        onChange={change}
+        onRemove={(id) => setItems((prev) => prev.filter((s) => s.productId !== id))}
+        onNote={(id, note) => setItems((prev) => prev.map((s) => (s.productId === id ? { ...s, note } : s)))}
+        onClose={onSheetClosed}
+      />
+    </section>
+  );
 }
