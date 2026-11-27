@@ -1,5 +1,5 @@
 import {initializeApp, getApps, type FirebaseOptions} from 'firebase/app';
-import {getAuth, type Auth} from 'firebase/auth';
+import {getAuth, initializeAuth, browserSessionPersistence, browserPopupRedirectResolver, type Auth} from 'firebase/auth';
 import {getFirestore, type Firestore} from 'firebase/firestore';
 
 export interface FirebaseServices {auth:Auth; db:Firestore}
@@ -30,6 +30,6 @@ export function getFirebaseServices():FirebaseServices|null {
   const options:FirebaseOptions={apiKey:config.apiKey,authDomain:config.authDomain,projectId:config.projectId,appId:config.appId};
   const existing=getApps().find(app=>app.name==='moin-browser');
   const app=existing??initializeApp(options,'moin-browser');
-  services={auth:getAuth(app),db:getFirestore(app)};
+  services={auth:existing?getAuth(app):initializeAuth(app,{persistence:browserSessionPersistence,popupRedirectResolver:browserPopupRedirectResolver}),db:getFirestore(app)};
   return services;
 }

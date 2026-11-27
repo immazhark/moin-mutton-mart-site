@@ -1,4 +1,6 @@
 ---
 import '../../styles/global.css';
+import '../../styles/owner.css';
+import OwnerConsole from '../../components/OwnerConsole';
 ---
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><title>Manage shop · Moin Mutton Mart</title></head><body><main class="simple-page"><a href="/">← Back to the counter</a><p class="eyebrow">OWNER ACCESS</p><h1>Manage shop</h1><p>Secure owner editing is being prepared. Live prices and availability cannot be changed from this preview.</p><p>The owner editor will support a shop-wide “Ask for today’s rate” mode that retains saved prices, with separate controls for product availability.</p></main></body></html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><title>Manage shop · Moin Mutton Mart</title></head><body><header class="site-header"><a class="brand" href="/"><img src="/images/logo.png" alt="" width="40" height="50"/><span class="brand-text"><strong>Moin Mutton Mart</strong><small>Owner console</small></span></a></header><main class="owner-page"><a class="owner-back" href="/">← Back to the counter</a><h1>Manage shop</h1><p class="owner-intro">Update your rates and availability in one place.</p><OwnerConsole client:load/></main></body></html>
