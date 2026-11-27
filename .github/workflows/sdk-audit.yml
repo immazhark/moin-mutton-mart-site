@@ -1,0 +1,26 @@
+name: Firebase SDK dependency audit
+on:
+  pull_request:
+    branches: ['feat/premium-counter-redesign']
+    paths: ['package.json', 'package-lock.json', '.github/workflows/sdk-audit.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Report runtime and full dependency advisories
+        run: |
+          for mode in runtime all; do
+            args=""
+            if test "$mode" = runtime; then args="--omit=dev"; fi
+            npm audit $args --json > "audit-$mode.json" || true
+            node -e 'const a=require("./audit-"+process.argv[1]+".json"); if(!a.metadata||!a.vulnerabilities)throw Error("Audit unavailable"); console.log(JSON.stringify({mode:process.argv[1],counts:a.metadata.vulnerabilities,advisories:Object.entries(a.vulnerabilities).map(([name,v])=>({name,severity:v.severity,range:v.range,isDirect:v.isDirect,via:v.via,fixAvailable:v.fixAvailable}))},null,2));' "$mode"
+          done
