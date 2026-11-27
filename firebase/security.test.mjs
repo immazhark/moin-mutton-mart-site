@@ -168,3 +168,13 @@ test('unchanged fields may retain their earlier timestamps while revision advanc
   const value = { ...fixture(), revision: 2, operationId: 'op-unchanged', updatedAt: serverTimestamp(), showPrices: false };
   await assertSucceeds(publish(db, value));
 });
+
+test('every offer in both validation partitions rejects invalid prices', async () => {
+  const db = owner();
+  for (const id of ids) {
+    const value = next();
+    value.offers[id].pricePaise = -1;
+    await assertFails(publish(db, value));
+  }
+  await assertSucceeds(publish(db));
+});

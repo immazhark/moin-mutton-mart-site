@@ -86,12 +86,12 @@ test('editing during a clipboard write invalidates its feedback', async ({ page 
   await sheet.getByLabel('Cut or preparation (optional)').fill('Small pieces');
   await page.evaluate(() => window.dispatchEvent(new Event('moin-test-finish-copy')));
   await expect(sheet.getByRole('button', { name: 'Copy request', exact: true })).toBeEnabled();
-  await expect(sheet.getByRole('status')).not.toContainText('Copied.');
+  await expect(sheet.getByRole('status', { name: 'Clipboard status' })).not.toContainText('Copied.');
   await sheet.getByRole('button', { name: 'Copy request', exact: true }).click();
   await page.evaluate(() => window.dispatchEvent(new Event('moin-test-finish-copy')));
-  await expect(sheet.getByRole('status')).toContainText('Copied.');
+  await expect(sheet.getByRole('status', { name: 'Clipboard status' })).toContainText('Copied.');
   await sheet.getByLabel('Cut or preparation (optional)').fill('Large pieces');
-  await expect(sheet.getByRole('status')).not.toContainText('Copied.');
+  await expect(sheet.getByRole('status', { name: 'Clipboard status' })).not.toContainText('Copied.');
 });
 
 test('expired basket is removed rather than restored', async ({ page }) => {

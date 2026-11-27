@@ -26,15 +26,7 @@ jobs:
         with:
           node-version: '24'
       - name: Install isolated emulator test dependencies
-        run: |
-          if test -f package-lock.json; then
-            npm ci --ignore-scripts
-          else
-            npm install --ignore-scripts --no-fund
-            node -e 'const p=require("./package-lock.json"); for(const d of Object.values(p.packages)){if(d.resolved && !d.resolved.startsWith("https://registry.npmjs.org/")) throw Error("Non-public registry URL");}'
-            sha256sum package-lock.json
-            base64 -w 1000 package-lock.json | sed 's/^/MO IN_LOCK_CHUNK:/' | sed 's/MO IN_LOCK_CHUNK/MOIN_LOCK_CHUNK/'
-          fi
+        run: npm ci --ignore-scripts
       - name: Select Java 21
         run: |
           test -n "$JAVA_HOME_21_X64"
