@@ -9,3 +9,7 @@ Ruling: Implement safe unpriced enquiry storefront before live catalogue schema/
 Domain tests initially failed on missing order module; implemented and 9 tests passed. Storage tests initially failed on missing module; implemented and 11 tests passed.
 Astro type check and static build pass. Browser checks blocked before launching any page by missing system Chromium; replacement download HTTP 403. Five viewport journey tests remain unverified.
 Self-review: checked original asset archive, preview noindex, rate qualification, note encoding, note non-persistence and admin disabled state. Secure owner publication and mobile visual review are outstanding and must precede production launch.
+
+## 27 November 2026 — authorised Git continuation
+
+User lifted routine Git restrictions. Branch feat/secure-catalogue-continuation created from 5825719. Order fixes d42f799, UI and test infrastructure f48f576. Catalogue runtime validation follows on the same development branch. Prior 36 Node assertion cases passed, not full Vitest. Direct terminal DNS unavailable; GitHub API writes work. Production branches, DNS, live Firestore, billing and public launch remain gated. Next: verify full build/browser checks and implement emulator-tested security and atomic audit. Never treat client validation as a permission boundary.
