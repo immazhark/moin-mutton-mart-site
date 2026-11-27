@@ -148,7 +148,7 @@ export default function ReviewSheet({ dialogRef, products, items, onChange, onRe
               <Phone size={18} aria-hidden="true" /> Call instead
             </a>
           </div>
-          <p role="status" className="copy-status">
+          <p role="status" aria-label="Clipboard status" className="copy-status">
             {copying && 'Copy in progress. If you edit the request, copy it again when ready.'}
             {copyState === 'done' && 'Copied. Paste it into your chat with the shop.'}
             {copyState === 'failed' && 'Copy is unavailable here. Select the text below instead.'}
