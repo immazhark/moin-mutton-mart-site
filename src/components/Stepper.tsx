@@ -5,9 +5,10 @@ interface Props {
   product: Product;
   quantity: number;
   onChange: (delta: -1 | 1) => void;
+  canIncrease?: boolean;
 }
 
-export default function Stepper({ product, quantity, onChange }: Props) {
+export default function Stepper({ product, quantity, onChange, canIncrease = true }: Props) {
   return (
     <div className="stepper">
       <button type="button" aria-label={`Reduce ${product.name}`} onClick={() => onChange(-1)}>
@@ -17,7 +18,7 @@ export default function Stepper({ product, quantity, onChange }: Props) {
       <button
         type="button"
         aria-label={`Increase ${product.name}`}
-        disabled={quantity + product.step > product.max}
+        disabled={!canIncrease || quantity + product.step > product.max}
         onClick={() => onChange(1)}
       >
         <Plus size={18} aria-hidden="true" />
