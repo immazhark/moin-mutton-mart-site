@@ -2,7 +2,7 @@ import { Search, ShoppingBasket } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { categories, products } from '../data/products';
 import type { Selection } from '../lib/order/order';
-import { STORAGE_KEY, decodeDraft, encodeDraft } from '../lib/order/storage';
+import { RETENTION_MS, STORAGE_KEY, decodeDraft, encodeDraft } from '../lib/order/storage';
 import ProductCard from './ProductCard';
 import ReviewSheet from './ReviewSheet';
 
@@ -14,6 +14,9 @@ export default function Catalogue() {
   const startedAt = useRef(0);
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
+  const closing = useRef(false);
+  const historyInitialized = useRef(false);
 
   // Restore once. Storage can be denied or corrupt; the basket then simply starts empty.
   useEffect(() => {
@@ -22,6 +25,8 @@ export default function Catalogue() {
       if (draft) {
         startedAt.current = draft.startedAt;
         setItems(draft.items);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
       }
     } catch {
       /* continue in memory */
@@ -38,7 +43,8 @@ export default function Catalogue() {
         localStorage.removeItem(STORAGE_KEY);
       } else {
         startedAt.current ||= Date.now();
-        localStorage.setItem(STORAGE_KEY, encodeDraft(items, startedAt.current));
+        if (Date.now() - startedAt.current > RETENTION_MS) localStorage.removeItem(STORAGE_KEY);
+        else localStorage.setItem(STORAGE_KEY, encodeDraft(items, startedAt.current));
       }
     } catch {
       /* no persistence available */
@@ -46,7 +52,8 @@ export default function Catalogue() {
   }, [items, restored]);
 
   function change(id: string, delta: -1 | 1) {
-    const p = products.find((x) => x.id === id)!;
+    const p = products.find((x) => x.id === id);
+    if (!p) return;
     setItems((prev) => {
       const old = prev.find((s) => s.productId === id);
       const quantity = (old?.quantity ?? 0) + delta * p.step;
@@ -56,21 +63,63 @@ export default function Catalogue() {
     });
   }
 
-  // Sheet: Back closes it instead of leaving the page, and the page behind does not scroll.
+  // Only a namespaced history entry represents an open sheet. Back and Forward
+  // synchronize the dialog; a delayed native close event must never navigate again.
   function openSheet() {
-    history.pushState({ sheet: true }, '');
+    const element = dialog.current;
+    if (!element || element.open || closing.current || items.length === 0) return;
+    element.showModal();
     document.body.classList.add('sheet-open');
-    dialog.current?.showModal();
+    try {
+      if (!history.state?.moinReview) history.pushState({ ...history.state, moinReview: true }, '');
+    } catch {
+      // Navigation history can be throttled; the explicit close button still works.
+    }
+  }
+  function requestClose() {
+    if (!dialog.current?.open || closing.current) return;
+    if (history.state?.moinReview) {
+      closing.current = true;
+      history.back();
+    } else {
+      dialog.current.close();
+      document.body.classList.remove('sheet-open');
+    }
   }
   function onSheetClosed() {
+    if (dialog.current?.open) return; // stale close event after a rapid Forward/reopen
     document.body.classList.remove('sheet-open');
-    if (history.state?.sheet) history.back();
-    opener.current?.focus();
+    (opener.current ?? searchInput.current)?.focus();
   }
   useEffect(() => {
-    const onPop = () => dialog.current?.open && dialog.current.close();
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
+    if (!restored) return;
+    const synchronize = () => {
+      closing.current = false;
+      const element = dialog.current;
+      if (!element) return;
+      if (history.state?.moinReview && items.length > 0) {
+        if (!element.open) element.showModal();
+        document.body.classList.add('sheet-open');
+      } else {
+        if (element.open) element.close();
+        document.body.classList.remove('sheet-open');
+        if (history.state?.moinReview) {
+          const { moinReview: _marker, ...state } = history.state;
+          history.replaceState(state, '');
+        }
+      }
+    };
+    // On reload, a saved basket can restore a history-marked review entry.
+    // Removing the final item while reviewing must leave the empty sheet usable.
+    if (!historyInitialized.current) {
+      historyInitialized.current = true;
+      synchronize();
+    }
+    window.addEventListener('popstate', synchronize);
+    return () => window.removeEventListener('popstate', synchronize);
+  }, [restored, items.length]);
+  useEffect(() => () => {
+    document.body.classList.remove('sheet-open');
   }, []);
 
   const q = query.trim().toLowerCase();
@@ -89,7 +138,7 @@ export default function Catalogue() {
       <label className="search">
         <Search size={18} aria-hidden="true" />
         <span className="sr-only">Search the range</span>
-        <input type="search" placeholder="Search the range" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input ref={searchInput} type="search" placeholder="Search the range" value={query} onChange={(e) => setQuery(e.target.value)} />
       </label>
 
       <div className="categories" role="group" aria-label="Categories">
@@ -130,6 +179,7 @@ export default function Catalogue() {
         onRemove={(id) => setItems((prev) => prev.filter((s) => s.productId !== id))}
         onNote={(id, note) => setItems((prev) => prev.map((s) => (s.productId === id ? { ...s, note } : s)))}
         onClose={onSheetClosed}
+        onRequestClose={requestClose}
       />
     </section>
   );

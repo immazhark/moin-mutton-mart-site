@@ -26,7 +26,7 @@ for (const width of [320, 360, 390, 430, 1280]) {
     expect(new URL(url!).pathname).toBe('/918143730054');
     const text = new URL(url!).searchParams.get('text')!;
     expect(text).toContain('Cut: Medium curry pieces');
-    expect(text).toContain('Pickup requested');
+    expect(text).toContain('Pickup chahiye.');
 
     await page.keyboard.press('Escape');
     await expect(sheet).not.toBeVisible();
@@ -42,3 +42,63 @@ for (const width of [320, 360, 390, 430, 1280]) {
     await expect(sheet.getByText('Nothing selected yet.')).toBeVisible();
   });
 }
+
+test('review Back, Forward, repeated close and final-item removal keep focus usable', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Add Mutton with bone', exact: true }).click();
+  const opener = page.getByRole('button', { name: 'Review request' });
+  const sheet = page.getByRole('dialog');
+  await opener.click();
+  await expect(sheet).toBeVisible();
+  await page.goBack();
+  await expect(sheet).not.toBeVisible();
+  await expect(opener).toBeFocused();
+  await page.goForward();
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(sheet).not.toBeVisible();
+  await opener.click();
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole('button', { name: 'Remove Mutton with bone' }).click();
+  await expect(sheet.getByText('Nothing selected yet.')).toBeVisible();
+  await sheet.getByRole('button', { name: 'Back to the counter' }).click();
+  await expect(sheet).not.toBeVisible();
+  await expect(page.getByLabel('Search the range')).toBeFocused();
+  await expect(page.locator('body')).not.toHaveClass(/sheet-open/);
+  await page.goForward();
+  await expect(sheet).not.toBeVisible();
+});
+
+test('editing during a clipboard write invalidates its feedback', async ({ page }) => {
+  await page.addInitScript(() => {
+    let complete: (() => void) | undefined;
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {
+      writeText: () => new Promise<void>((resolve) => { complete = resolve; }),
+    } });
+    window.addEventListener('moin-test-finish-copy', () => complete?.());
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Add Mutton with bone', exact: true }).click();
+  await page.getByRole('button', { name: 'Review request' }).click();
+  const sheet = page.getByRole('dialog');
+  await sheet.getByRole('button', { name: 'Copy request', exact: true }).click();
+  await expect(sheet.getByRole('button', { name: 'Copying…' })).toBeDisabled();
+  await sheet.getByLabel('Cut or preparation (optional)').fill('Small pieces');
+  await page.evaluate(() => window.dispatchEvent(new Event('moin-test-finish-copy')));
+  await expect(sheet.getByRole('button', { name: 'Copy request', exact: true })).toBeEnabled();
+  await expect(sheet.getByRole('status', { name: 'Clipboard status' })).not.toContainText('Copied.');
+  await sheet.getByRole('button', { name: 'Copy request', exact: true }).click();
+  await page.evaluate(() => window.dispatchEvent(new Event('moin-test-finish-copy')));
+  await expect(sheet.getByRole('status', { name: 'Clipboard status' })).toContainText('Copied.');
+  await sheet.getByLabel('Cut or preparation (optional)').fill('Large pieces');
+  await expect(sheet.getByRole('status', { name: 'Clipboard status' })).not.toContainText('Copied.');
+});
+
+test('expired basket is removed rather than restored', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('moin-request-v2', JSON.stringify({ version: 2, startedAt: Date.now() - 25 * 60 * 60 * 1000, items: [{ productId: 'mutton-bone', quantity: 500 }] }));
+  });
+  await page.goto('/');
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('moin-request-v2'))).toBeNull();
+  await expect(page.getByRole('button', { name: 'Review request' })).toHaveCount(0);
+});

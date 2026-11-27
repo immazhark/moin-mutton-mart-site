@@ -25,6 +25,11 @@ describe('quantities and honest estimates', () => {
     expect(estimateOrder([{ ...bone, pricingBasis: null }], [sel('bone', 500)], { bone: 90000 })).toEqual({ kind: 'confirmation_required' }));
   it('prices sets per set, not per gram', () =>
     expect(estimateOrder([{ ...paya, pricingBasis: 'set' }], [sel('paya', 2)], { paya: 10000 })).toEqual({ kind: 'complete', totalPaise: 20000 }));
+  it('requires actual weight when request and charging units differ', () => {
+    const chicken: Product = { id: 'chicken', name: 'Chicken', category: 'Chicken', unit: 'piece', step: 1, max: 10, pricingBasis: 'kg' };
+    expect(estimateOrder([chicken], [sel('chicken', 2)], { chicken: 20000 })).toEqual({ kind: 'confirmation_required' });
+    expect(estimateOrder([{ ...bone, pricingBasis: 'piece' }], [sel('bone', 500)], { bone: 90000 })).toEqual({ kind: 'confirmation_required' });
+  });
   it('labels weight, pieces and sets distinctly', () => {
     expect(formatQuantity(bone, 1500)).toBe('1.5 kg');
     expect(formatQuantity(bone, 250)).toBe('250 g');
@@ -43,12 +48,25 @@ describe('WhatsApp request', () => {
         '*ITEMS* (2)',
         '1. Mutton with bone', '   Quantity: 1.5 kg', '   Cut: Medium curry pieces', '',
         '2. Paya', '   Quantity: 1 set (4 pieces)', '',
-        '*FULFILMENT*', 'Pickup requested', '',
+        '*FULFILMENT*', 'Pickup chahiye.', '',
         '*NOTE*', 'Please call when ready.', '',
-        '*PRICE*', 'Rates and total: please confirm.', '',
-        'Please confirm availability, final weight, price and pickup time.',
+        '*PRICE*', 'Rate aur total confirm kar dijiye.', '',
+        'Availability, final weight, total aur timing confirm kar dijiye.',
       ].join('\n'),
     );
+  });
+  it('uses Hinglish for each fulfilment option without translating customer notes', () => {
+    const note = 'Please call when ready.';
+    const cases = [
+      ['pickup', 'Pickup chahiye.'],
+      ['delivery', 'Delivery chahiye; charges aur time confirm kar dijiye.'],
+      ['discuss', 'Pickup ya delivery ke liye baat karni hai.'],
+    ] as const;
+    for (const [mode, expected] of cases) {
+      const message = formatRequest([bone], [sel('bone', 500)], mode, note);
+      expect(message).toContain(expected);
+      expect(message).toContain(note);
+    }
   });
   it('never claims a price, order id or acceptance', () => {
     expect(m).not.toMatch(/₹|order id|order placed|accepted|paid/i);
