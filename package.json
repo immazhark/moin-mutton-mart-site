@@ -15,7 +15,8 @@
     "astro": "7.4.13",
     "lucide-react": "1.80.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "firebase": "13.4.0"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
@@ -23,6 +24,7 @@
     "@types/react": "19.3.3",
     "@types/react-dom": "19.3.0",
     "typescript": "6.0.3",
-    "vitest": "5.1.2"
+    "vitest": "5.1.2",
+    "@firebase/rules-unit-testing": "6.0.0"
   }
 }
