@@ -1,5 +1,5 @@
 import { Check, Copy, MessageCircle, Phone, Trash2, X } from 'lucide-react';
-import { useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { CopySession } from '../lib/order/copy-session';
 import {
   MAX_LINE_NOTE,
@@ -47,21 +47,34 @@ export default function ReviewSheet({ dialogRef, products, items, live, refresh,
   const [grant,setGrant]=useState<{key:string;snapshot:CatalogueSnapshot;at:number;message:string}|null>(null);
   const busy=useRef(false);
   const currentMessage=useRef(message);
+  const messageRevision=useRef(0);
   const current=live.kind==='ready'?live.catalogue:null;
   const selectionState=current?reviewChanges(current,current,products,items):null;
   const blocked=selectionState?.kind==='blocked';
   const validGrant=grant&&grant.key===message&&grant.snapshot===live&&!blocked?grant:null;
   const canLink=validGrant!==null&&linkFits(validGrant.message);
   const estimate=requestEstimate(current,products,items);
-  useLayoutEffect(()=>{currentMessage.current=message;},[message]);
+  useLayoutEffect(()=>{
+    if(currentMessage.current===message)return;
+    currentMessage.current=message;
+    messageRevision.current++;
+    setGrant(null);
+    setReviewNotice(null);
+  },[message]);
+  useEffect(()=>{
+    if(!grant)return;
+    const expiry=window.setTimeout(()=>setGrant(previous=>previous===grant?null:previous),Math.max(0,15000-(Date.now()-grant.at)));
+    return ()=>window.clearTimeout(expiry);
+  },[grant]);
 
   async function checkLatest(){
     if(busy.current||!message)return;
     busy.current=true;setChecking(true);setGrant(null);setReviewNotice(null);
     const key=message;
+    const revision=messageRevision.current;
     try{
       const next=await refresh();
-      if(currentMessage.current!==key||!dialogRef.current?.open)return;
+      if(currentMessage.current!==key||messageRevision.current!==revision||!dialogRef.current?.open)return;
       if(next.kind!=='ready'){
         setGrant({key,snapshot:next,at:Date.now(),message:key});
         setReviewNotice({key,text:'Live rates and availability could not be checked. You can send an unpriced enquiry and ask the shop to confirm.'});
@@ -80,6 +93,8 @@ export default function ReviewSheet({ dialogRef, products, items, live, refresh,
       const freshMessage=formatRequest(products,items,fulfilment,orderNote,requestEstimate(next.catalogue,products,items));
       setGrant({key,snapshot:next,at:Date.now(),message:freshMessage});
       setReviewNotice({key,text:'Current information checked. Final availability, weight and total are confirmed by the shop.'});
+    }catch{
+      if(currentMessage.current===key&&messageRevision.current===revision)setReviewNotice({key,text:'Could not verify this request. Try again or call the shop.'});
     }finally{busy.current=false;setChecking(false);}
   }
 

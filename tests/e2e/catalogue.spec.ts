@@ -115,6 +115,21 @@ test('editing invalidates a previously checked unpriced handoff',async({page})=>
   await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toBeVisible();
   await sheet.getByLabel('Cut or preparation (optional)').fill('Thin slices');
   await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toHaveCount(0);
+  await sheet.getByLabel('Cut or preparation (optional)').fill('');
+  await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toHaveCount(0);
   await sheet.getByRole('button',{name:'Check latest rates & availability'}).click();
   await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toBeVisible();
+});
+
+test('handoff approval expires without polling',async({page})=>{
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Add Mutton with bone',exact:true}).click();
+  await page.getByRole('button',{name:'Review request'}).click();
+  const sheet=page.getByRole('dialog');
+  await sheet.getByRole('button',{name:'Check latest rates & availability'}).click();
+  await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toBeVisible();
+  await page.clock.fastForward(15001);
+  await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toHaveCount(0);
+  await expect(sheet.getByRole('button',{name:'Check latest rates & availability'})).toBeEnabled();
 });
