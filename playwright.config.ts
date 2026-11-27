@@ -1,2 +1,19 @@
-import {defineConfig} from '@playwright/test';
-export default defineConfig({testDir:'tests/e2e',use:{baseURL:'http://127.0.0.1:4321',launchOptions:{args:['--no-sandbox']}},webServer:{command:'python3 -m http.server 4321 --bind 127.0.0.1 --directory dist',url:'http://127.0.0.1:4321',reuseExistingServer:true}});
+import { defineConfig } from '@playwright/test';
+
+const rawPort = process.env.PLAYWRIGHT_PORT ?? '4321';
+const port = Number(rawPort);
+if (!/^\d+$/.test(rawPort) || !Number.isInteger(port) || port < 1024 || port > 65535) {
+  throw new Error('PLAYWRIGHT_PORT must be an integer from 1024 to 65535.');
+}
+const baseURL = `http://127.0.0.1:${port}`;
+
+export default defineConfig({
+  testDir: 'tests/e2e',
+  use: { baseURL, launchOptions: { args: ['--no-sandbox'] } },
+  webServer: {
+    command: `npm run build && python3 -m http.server ${port} --bind 127.0.0.1 --directory dist`,
+    url: baseURL,
+    reuseExistingServer: false,
+    timeout: 120_000,
+  },
+});

@@ -1,5 +1,6 @@
 import { Check, Copy, MessageCircle, Phone, Trash2, X } from 'lucide-react';
-import { useState, type RefObject } from 'react';
+import { useLayoutEffect, useState, useSyncExternalStore, type RefObject } from 'react';
+import { CopySession } from '../lib/order/copy-session';
 import {
   MAX_LINE_NOTE,
   MAX_ORDER_NOTE,
@@ -26,31 +27,30 @@ interface Props {
   onRemove: (id: string) => void;
   onNote: (id: string, note: string) => void;
   onClose: () => void;
+  onRequestClose: () => void;
 }
 
-export default function ReviewSheet({ dialogRef, products, items, onChange, onRemove, onNote, onClose }: Props) {
+export default function ReviewSheet({ dialogRef, products, items, onChange, onRemove, onNote, onClose, onRequestClose }: Props) {
   const [fulfilment, setFulfilment] = useState<Fulfilment>('discuss');
   const [orderNote, setOrderNote] = useState('');
-  const [copyState, setCopyState] = useState<'idle' | 'done' | 'failed'>('idle');
+  const [copySession] = useState(() => new CopySession());
+  const { busy: copying, result: copyState } = useSyncExternalStore(copySession.subscribe, copySession.getSnapshot, copySession.getSnapshot);
   const [otherOpen, setOtherOpen] = useState<Set<string>>(new Set());
 
   const message = items.length ? formatRequest(products, items, fulfilment, orderNote) : '';
   const canLink = message !== '' && linkFits(message);
 
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(message);
-      setCopyState('done');
-    } catch {
-      setCopyState('failed');
-    }
+  useLayoutEffect(() => { copySession.setMessage(message); }, [copySession, message]);
+
+  function copy() {
+    void copySession.copy((text) => navigator.clipboard.writeText(text));
   }
 
   return (
-    <dialog ref={dialogRef} className="sheet" aria-labelledby="sheet-title" onClose={onClose}>
+    <dialog ref={dialogRef} className="sheet" aria-labelledby="sheet-title" onClose={onClose} onCancel={(event) => { event.preventDefault(); onRequestClose(); }}>
       <div className="sheet-head">
         <h2 id="sheet-title">Your request</h2>
-        <button type="button" className="icon-btn" aria-label="Close" onClick={() => dialogRef.current?.close()}>
+        <button type="button" className="icon-btn" aria-label="Close" onClick={onRequestClose}>
           <X size={22} aria-hidden="true" />
         </button>
       </div>
@@ -58,7 +58,7 @@ export default function ReviewSheet({ dialogRef, products, items, onChange, onRe
       {items.length === 0 ? (
         <div className="empty">
           <p>Nothing selected yet.</p>
-          <button type="button" className="btn-primary" onClick={() => dialogRef.current?.close()}>
+          <button type="button" className="btn-primary" onClick={onRequestClose}>
             Back to the counter
           </button>
         </div>
@@ -141,14 +141,15 @@ export default function ReviewSheet({ dialogRef, products, items, onChange, onRe
           <p className="destination">Opens a chat with +91 81437 30054. You send the message yourself.</p>
 
           <div className="fallbacks">
-            <button type="button" className="btn-secondary" onClick={copy}>
-              {copyState === 'done' ? <Check size={18} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />} Copy request
+            <button type="button" className="btn-secondary" onClick={copy} disabled={copying}>
+              {copyState === 'done' ? <Check size={18} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />} {copying ? 'Copying…' : 'Copy request'}
             </button>
             <a className="btn-secondary" href="tel:+918143730054">
               <Phone size={18} aria-hidden="true" /> Call instead
             </a>
           </div>
           <p role="status" className="copy-status">
+            {copying && 'Copy in progress. If you edit the request, copy it again when ready.'}
             {copyState === 'done' && 'Copied. Paste it into your chat with the shop.'}
             {copyState === 'failed' && 'Copy is unavailable here. Select the text below instead.'}
           </p>
