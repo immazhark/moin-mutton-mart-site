@@ -9,5 +9,10 @@
     "@firebase/rules-unit-testing": "6.0.0",
     "firebase": "13.4.0",
     "firebase-tools": "15.37.0"
+  },
+  "overrides": {
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "1.14.7"
+    }
   }
 }
