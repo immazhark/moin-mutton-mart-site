@@ -26,7 +26,7 @@ for (const width of [320, 360, 390, 430, 1280]) {
     expect(new URL(url!).pathname).toBe('/918143730054');
     const text = new URL(url!).searchParams.get('text')!;
     expect(text).toContain('Cut: Medium curry pieces');
-    expect(text).toContain('Pickup requested');
+    expect(text).toContain('Pickup chahiye.');
 
     await page.keyboard.press('Escape');
     await expect(sheet).not.toBeVisible();

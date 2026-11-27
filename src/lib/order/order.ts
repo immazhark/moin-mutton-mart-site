@@ -67,10 +67,17 @@ export function estimateOrder(
       continue;
     }
     if (!Number.isSafeInteger(rate) || rate <= 0 || rate > 10_000_000) throw new Error('Invalid rate');
+    const quantityBasis = p.unit === 'g' ? 'kg' : p.unit;
+    if (p.pricingBasis !== quantityBasis) {
+      // E.g. two chickens are not two grams: only the shop can confirm actual weight.
+      unknown = true;
+      continue;
+    }
     const numerator = rate * s.quantity;
     if (!Number.isSafeInteger(numerator)) throw new Error('Unsafe total');
     const perKg = p.pricingBasis === 'kg';
-    total += Math.floor((numerator + (perKg ? 500 : 0)) / (perKg ? 1000 : 1));
+    // Avoid overflow from adding 500 to a near-limit integer numerator.
+    total += perKg ? Math.floor(numerator / 1000) + (numerator % 1000 >= 500 ? 1 : 0) : numerator;
     if (!Number.isSafeInteger(total)) throw new Error('Unsafe total');
   }
   return unknown ? { kind: 'confirmation_required' } : { kind: 'complete', totalPaise: total };
@@ -84,26 +91,34 @@ export function formatQuantity(p: Product, q: number): string {
   return `${label} (${p.setContents}${q === 1 ? '' : ' each'})`;
 }
 
+/** A Unicode-aware regexp matches only unpaired surrogates, not valid pairs. */
+function wellFormed(text: string): string {
+  return text.replace(/[\uD800-\uDFFF]/gu, '\uFFFD');
+}
+
 /**
  * Customer text becomes a single plain line: control characters and newlines collapse to
  * spaces and WhatsApp formatting delimiters are dropped, so a note cannot fake a header,
  * price or confirmation block. Unicode is kept.
  */
 export function sanitizeText(text: string, max: number): string {
-  return text
-    .replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]+/gu, ' ')
+  return wellFormed(text)
+    // Keep ZWJ and ZWNJ, which carry meaning in multilingual text and emoji.
+    .replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, (c) => c === '\u200C' || c === '\u200D' ? c : ' ')
     .replace(/[*_~`]/g, '')
     .replace(/^>+\s*/, '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, max)
+    // HTML input limits are UTF-16 units; discard a truncated trailing half-pair.
+    .replace(/[\uD800-\uDBFF]$/u, '')
     .trim();
 }
 
 const FULFILMENT_LINE: Record<Fulfilment, string> = {
-  pickup: 'Pickup requested',
-  delivery: 'Delivery requested (fee and timing to be confirmed)',
-  discuss: 'Pickup or delivery: to be discussed',
+  pickup: 'Pickup chahiye.',
+  delivery: 'Delivery chahiye; charges aur time confirm kar dijiye.',
+  discuss: 'Pickup ya delivery ke liye baat karni hai.',
 };
 
 export function formatRequest(
@@ -124,13 +139,13 @@ export function formatRequest(
     `*ITEMS* (${selections.length})\n${items.join('\n\n')}`,
     `*FULFILMENT*\n${FULFILMENT_LINE[fulfilment]}`,
     ...(note ? [`*NOTE*\n${note}`] : []),
-    '*PRICE*\nRates and total: please confirm.',
-    'Please confirm availability, final weight, price and pickup time.',
+    '*PRICE*\nRate aur total confirm kar dijiye.',
+    'Availability, final weight, total aur timing confirm kar dijiye.',
   ].join('\n\n');
 }
 
 export function buildWhatsAppUrl(message: string): string {
-  return `https://wa.me/${SHOP_WHATSAPP}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${SHOP_WHATSAPP}?text=${encodeURIComponent(wellFormed(message))}`;
 }
 
 /** False means the link is too long to trust; the UI then offers copy and call only. */
