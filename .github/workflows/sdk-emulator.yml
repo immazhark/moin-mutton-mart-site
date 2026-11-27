@@ -1,0 +1,37 @@
+name: Firebase SDK transaction verification
+on:
+  pull_request:
+    paths:
+      - 'firebase/**'
+      - 'src/lib/catalogue/**'
+      - 'tests/emulator/**'
+      - 'package*.json'
+      - 'vitest.emulator.config.mjs'
+      - '.github/workflows/sdk-emulator.yml'
+permissions:
+  contents: read
+concurrency:
+  group: sdk-emulator-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  sdk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - run: npm audit --audit-level=high
+      - run: npm ci --ignore-scripts --prefix firebase
+      - run: npm audit --audit-level=high --prefix firebase
+      - name: Select Java 21
+        run: |
+          test -n "$JAVA_HOME_21_X64"
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME_21_X64/bin" >> "$GITHUB_PATH"
+      - name: Run real SDK transaction tests against loopback only
+        run: ./firebase/node_modules/.bin/firebase emulators:exec --config firebase/firebase.json --project demo-moin-security --only firestore 'npm run test:emulator'

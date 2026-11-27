@@ -8,7 +8,8 @@
     "build": "astro build",
     "check": "astro check",
     "test": "vitest run",
-    "test:e2e": "playwright test --config playwright.config.mjs"
+    "test:e2e": "playwright test --config playwright.config.mjs",
+    "test:emulator": "vitest run --config vitest.emulator.config.mjs"
   },
   "dependencies": {
     "@astrojs/react": "7.1.9",
