@@ -1,0 +1,48 @@
+name: Firestore emulator verification
+on:
+  pull_request:
+    paths:
+      - 'firebase/**'
+      - '.github/workflows/firestore-emulator.yml'
+permissions:
+  contents: read
+concurrency:
+  group: firestore-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  rules:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: firebase
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Install isolated emulator test dependencies
+        run: |
+          if test -f package-lock.json; then
+            npm ci --ignore-scripts
+          else
+            npm install --ignore-scripts --no-fund
+          fi
+      - name: Select Java 21
+        run: |
+          test -n "$JAVA_HOME_21_X64"
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME_21_X64/bin" >> "$GITHUB_PATH"
+      - name: Verify deny-all baseline rejects owner publication
+        run: |
+          set +e
+          RULES_DENY_ALL=1 npm exec -- firebase emulators:exec --project demo-moin-security --only firestore 'node --test --test-name-pattern="authorised owner publishes" security.test.mjs' > baseline.log 2>&1
+          result=$?
+          cat baseline.log
+          test "$result" -ne 0 && grep -qiE 'permission-denied|PERMISSION_DENIED' baseline.log
+      - name: Run real security rules emulator tests
+        run: npm test
