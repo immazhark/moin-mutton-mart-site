@@ -45,10 +45,10 @@ describe('Firestore boundary', () => {
     if (decision.kind !== 'write') throw Error('Expected write');
     const { catalogue, audit } = encodePublication(decoded, decision, 'owner');
     expect(catalogue.revision).toBe(2);
-    expect(catalogue.offers.paya.priceUpdatedAt.isEqual(serverTimestamp())).toBe(true);
-    expect(catalogue.offers.paya.availabilityUpdatedAt.isEqual(stamp)).toBe(true);
-    expect(catalogue.offers.boneless.availabilityUpdatedAt.isEqual(serverTimestamp())).toBe(true);
-    expect(catalogue.offers.boneless.priceUpdatedAt.isEqual(stamp)).toBe(true);
+    expect(catalogue.offers.paya.priceUpdatedAt).toEqual(serverTimestamp());
+    expect(catalogue.offers.paya.availabilityUpdatedAt).toEqual(stamp);
+    expect(catalogue.offers.boneless.availabilityUpdatedAt).toEqual(serverTimestamp());
+    expect(catalogue.offers.boneless.priceUpdatedAt).toEqual(stamp);
     expect(audit.snapshot).toEqual(catalogue);
     expect(audit.actorUid).toBe('owner');
   });
