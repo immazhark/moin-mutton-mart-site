@@ -4,7 +4,7 @@ import {LogOut,RefreshCw,Download,Upload,ShieldCheck,Save,Store,AlertCircle} fro
 import {getFirebaseServices,type FirebaseServices} from '../lib/catalogue/firebase-browser';
 import {getActiveMembership,getCatalogueFromServer,saveCatalogue} from '../lib/catalogue/firestore';
 import {buildDraft,decodeBackup,encodeBackup,formFromCatalogue,formFromDraft,MAX_BACKUP_BYTES,visibilityOptions,availabilityOptions,type OwnerForm,type OfferForm} from '../lib/catalogue/owner-form';
-import {editableDraft,planPublication,type SaveIntent} from '../lib/catalogue/publication';
+import {planPublication,type SaveIntent} from '../lib/catalogue/publication';
 import type {Catalogue} from '../lib/catalogue/contract';
 import {products} from '../data/products';
 
@@ -97,7 +97,7 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
   },[load,services,user.uid]);
   useEffect(()=>{
     if(!dirty&&!unresolved&&saveState!=='saving')return;
-    const protect=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};
+    const protect=(event:BeforeUnloadEvent)=>{event.preventDefault();};
     window.addEventListener('beforeunload',protect);
     return()=>window.removeEventListener('beforeunload',protect);
   },[dirty,unresolved,saveState]);
@@ -164,7 +164,7 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
   }
   const controlsDisabled=operationBusy||saveState!=='idle'||load!=='ready';
   return <section className="owner-console">
-    <div className="owner-session"><div><strong>Owner session</strong><small>{user.email??'Google account'}</small></div><button className="owner-secondary" disabled={operationBusy||saveState==='saving'} onClick={()=>void leave()}><LogOut size={17}/> Sign out</button></div>
+    <div className="owner-session"><div><strong>Owner session</strong><small>{user.email??'Google account'}</small></div><button className="owner-secondary" disabled={operationBusy} onClick={()=>void leave()}><LogOut size={17}/> Sign out</button></div>
     {notice&&<p className="owner-success" role="status">{notice}</p>}
     {error&&<p className="owner-error" role="alert"><AlertCircle size={18}/>{error}</p>}
     {load==='loading'&&<p role="status">Checking administrator access…</p>}
@@ -187,7 +187,7 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
           <label className="owner-toggle"><input type="checkbox" checked={o.enabled} onChange={e=>patch(product.id,{enabled:e.target.checked})}/> Listed in shop</label>
           <div className="owner-fields"><label>Rate (₹)<input aria-label={product.name+' rate in rupees'} inputMode="decimal" maxLength={10} value={o.price} onChange={e=>patch(product.id,{price:e.target.value})} placeholder="No rate"/></label>
           <label>Availability<select aria-label={product.name+' availability'} value={o.availability} onChange={e=>patch(product.id,{availability:e.target.value as OfferForm['availability']})}>{availabilityOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
-          <details open={o.priceVisibility!=='inherit'||o.stock!==''?true:undefined}><summary>Rate visibility & stock</summary>
+          <details><summary>Rate visibility & stock</summary>
             <label>Rate display<select aria-label={product.name+' rate display'} value={o.priceVisibility} onChange={e=>patch(product.id,{priceVisibility:e.target.value as OfferForm['priceVisibility']})}>{visibilityOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
             <label>Stock ({unit})<input aria-label={product.name+' stock in '+unit} inputMode="numeric" maxLength={10} value={o.stock} onChange={e=>patch(product.id,{stock:e.target.value})} placeholder="Unknown"/></label><small>Blank = unknown. Zero = none available.</small>
           </details>
