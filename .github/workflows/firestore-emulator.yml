@@ -31,6 +31,8 @@ jobs:
         run: |
           npm audit --json > npm-audit.json || true
           node -e 'const a=require("./npm-audit.json"); if(!a.metadata || !a.vulnerabilities) throw Error("Audit unavailable"); console.log(JSON.stringify({counts:a.metadata.vulnerabilities, advisories:Object.entries(a.vulnerabilities).map(([name,v])=>({name,severity:v.severity,range:v.range,isDirect:v.isDirect,via:v.via,fixAvailable:v.fixAvailable}))},null,2));'
+      - name: Block high and critical dependency advisories
+        run: npm audit --audit-level=high
       - name: Select Java 21
         run: |
           test -n "$JAVA_HOME_21_X64"
