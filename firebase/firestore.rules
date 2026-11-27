@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function cataloguePath() {
+      return /databases/$(database)/documents/public/catalogue;
+    }
+    function auditPath(id) {
+      return /databases/$(database)/documents/audit/$(id);
+    }
+    function isActiveAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+    }
+    function validOffer(o, old) {
+      let price = o.pricePaise;
+      let stock = o.stockQuantity;
+      let delta = o.diff(old).affectedKeys();
+      return o.keys().hasOnly(['enabled', 'pricePaise', 'priceVisibility', 'availability', 'stockQuantity', 'priceUpdatedAt', 'availabilityUpdatedAt'])
+        && o.enabled is bool
+        && o.priceVisibility in ['inherit', 'show', 'ask']
+        && (price == null ? o.priceVisibility == 'ask' : (price is int && price >= 1 && price <= 10000000))
+        && o.availability in ['available', 'sold_out', 'ask']
+        && (stock == null || (stock is int && stock >= 0 && stock <= 1000000000))
+        && (o.priceUpdatedAt == request.time
+            || !delta.hasAny(['pricePaise', 'priceVisibility', 'priceUpdatedAt']))
+        && (o.availabilityUpdatedAt == request.time
+            || !delta.hasAny(['enabled', 'availability', 'stockQuantity', 'availabilityUpdatedAt']));
+    }
+    // Both writes are mandatory in one atomic commit. Split the full schema
+    // validation across the two independently evaluated write rules.
+    function validOffersA(offers, old) {
+      return offers is map
+        && offers.keys().hasOnly(['mutton-bone', 'boneless', 'leg', 'liver', 'liver-set', 'kidney', 'boti', 'brain', 'head', 'paya', 'live-chicken', 'skinless', 'desi'])
+        && validOffer(offers['mutton-bone'], old['mutton-bone'])
+        && validOffer(offers['boneless'], old['boneless'])
+        && validOffer(offers['leg'], old['leg'])
+        && validOffer(offers['liver'], old['liver'])
+        && validOffer(offers['liver-set'], old['liver-set'])
+        && validOffer(offers['kidney'], old['kidney'])
+        && validOffer(offers['boti'], old['boti']);
+    }
+    function validOffersB(offers, old) {
+      return validOffer(offers['brain'], old['brain'])
+        && validOffer(offers['head'], old['head'])
+        && validOffer(offers['paya'], old['paya'])
+        && validOffer(offers['live-chicken'], old['live-chicken'])
+        && validOffer(offers['skinless'], old['skinless'])
+        && validOffer(offers['desi'], old['desi']);
+    }
+    function validCatalogue(next, old) {
+      return next.keys().hasOnly(['schemaVersion', 'revision', 'updatedAt', 'operationId', 'acceptingRequests', 'showPrices', 'offers'])
+        && next.schemaVersion is int && next.schemaVersion == 1
+        && next.revision is int && next.revision > 1 && next.revision <= 9007199254740991
+        && next.revision == old.revision + 1
+        && next.updatedAt == request.time
+        && next.operationId is string && next.operationId.matches('^[A-Za-z0-9_-]{1,128}$')
+        && next.operationId != old.operationId
+        && next.acceptingRequests is bool && next.showPrices is bool
+        && validOffersA(next.offers, old.offers);
+    }
+    function validAudit(record, next, previousRevision) {
+      return record.keys().hasOnly(['actorUid', 'createdAt', 'previousRevision', 'snapshot'])
+        && record.actorUid == request.auth.uid
+        && record.createdAt == request.time
+        && record.previousRevision is int && record.previousRevision == previousRevision
+        && record.snapshot == next;
+    }
+    function hasNewMatchingAudit(next) {
+      // The new audit must be created in this very batch. Its create rule enforces
+      // the actor, revision, exact snapshot and remaining offer validation.
+      return !exists(auditPath(next.operationId)) && existsAfter(auditPath(next.operationId));
+    }
+    function isMatchingPublication(id, record) {
+      let old = get(cataloguePath()).data;
+      let next = getAfter(cataloguePath()).data;
+      return next.operationId == id
+        && next.operationId != old.operationId
+        && next.revision == old.revision + 1
+        && next.updatedAt == request.time
+        && validOffersB(next.offers, old.offers)
+        && validAudit(record, next, old.revision);
+    }
+    match /public/catalogue {
+      allow get: if true;
+      allow update: if isActiveAdmin()
+        && validCatalogue(request.resource.data, resource.data)
+        && hasNewMatchingAudit(request.resource.data);
+    }
+    match /admins/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+    }
+    match /audit/{id} {
+      allow get: if isActiveAdmin();
+      allow create: if isActiveAdmin() && isMatchingPublication(id, request.resource.data);
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
