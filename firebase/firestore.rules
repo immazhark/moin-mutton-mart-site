@@ -65,9 +65,10 @@ service cloud.firestore {
         && record.previousRevision is int && record.previousRevision == previousRevision
         && record.snapshot == next;
     }
-    function hasNewMatchingAudit(next, old) {
-      return !exists(auditPath(next.operationId))
-        && validAudit(getAfter(auditPath(next.operationId)).data, next, old.revision);
+    function hasNewMatchingAudit(next) {
+      // The new audit must be created in this very batch. Its create rule enforces
+      // the actor, revision, exact snapshot and remaining offer validation.
+      return !exists(auditPath(next.operationId)) && existsAfter(auditPath(next.operationId));
     }
     function isMatchingPublication(id, record) {
       let old = get(cataloguePath()).data;
@@ -83,7 +84,7 @@ service cloud.firestore {
       allow get: if true;
       allow update: if isActiveAdmin()
         && validCatalogue(request.resource.data, resource.data)
-        && hasNewMatchingAudit(request.resource.data, resource.data);
+        && hasNewMatchingAudit(request.resource.data);
     }
     match /admins/{uid} {
       allow get: if request.auth != null && request.auth.uid == uid;
