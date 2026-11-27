@@ -11,23 +11,20 @@ service cloud.firestore {
       return request.auth != null
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
     }
-    function timestampValid(value, previous, changed) {
-      return value is timestamp
-        && (changed ? value == request.time : (value == previous || value == request.time));
-    }
     function validOffer(o, old) {
-      return o is map
-        && o.keys().hasOnly(['enabled', 'pricePaise', 'priceVisibility', 'availability', 'stockQuantity', 'priceUpdatedAt', 'availabilityUpdatedAt'])
+      let price = o.pricePaise;
+      let stock = o.stockQuantity;
+      let delta = o.diff(old).affectedKeys();
+      return o.keys().hasOnly(['enabled', 'pricePaise', 'priceVisibility', 'availability', 'stockQuantity', 'priceUpdatedAt', 'availabilityUpdatedAt'])
         && o.enabled is bool
         && o.priceVisibility in ['inherit', 'show', 'ask']
-        && ((o.pricePaise is int && o.pricePaise >= 1 && o.pricePaise <= 10000000)
-            || (o.pricePaise == null && o.priceVisibility == 'ask'))
+        && (price == null ? o.priceVisibility == 'ask' : (price is int && price >= 1 && price <= 10000000))
         && o.availability in ['available', 'sold_out', 'ask']
-        && (o.stockQuantity == null || (o.stockQuantity is int && o.stockQuantity >= 0 && o.stockQuantity <= 1000000000))
-        && timestampValid(o.priceUpdatedAt, old.priceUpdatedAt,
-            o.pricePaise != old.pricePaise || o.priceVisibility != old.priceVisibility)
-        && timestampValid(o.availabilityUpdatedAt, old.availabilityUpdatedAt,
-            o.enabled != old.enabled || o.availability != old.availability || o.stockQuantity != old.stockQuantity);
+        && (stock == null || (stock is int && stock >= 0 && stock <= 1000000000))
+        && (o.priceUpdatedAt == request.time
+            || !delta.hasAny(['pricePaise', 'priceVisibility', 'priceUpdatedAt']))
+        && (o.availabilityUpdatedAt == request.time
+            || !delta.hasAny(['enabled', 'availability', 'stockQuantity', 'availabilityUpdatedAt']));
     }
     function validOffers(offers, old) {
       return offers is map
