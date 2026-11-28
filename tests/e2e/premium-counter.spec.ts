@@ -11,6 +11,8 @@ for(const width of [360,390,768,1280,1920]){
     await expect(first.locator('.unit-amount')).toHaveText('500 g');
     expect(await first.locator('.unit-amount').evaluate(el=>getComputedStyle(el).whiteSpace)).toBe('nowrap');
     await expect(page.getByRole('button',{name:'Add Mutton with bone',exact:true})).toBeInViewport();
+    const header=await page.locator('.site-header').boundingBox();
+    expect(header?.height).toBeLessThan(100);
     const rect=await first.boundingBox();
     expect(rect?.height).toBeLessThan(265);
     await expect(page.locator('.product-card').nth(2).getByRole('heading')).toBeInViewport();
@@ -38,4 +40,19 @@ test('review readiness is explicit and immediately reset by edits',async({page})
   await sheet.getByLabel('Cut or preparation (optional)').fill('Small pieces');
   await expect(state).toHaveText('Review your selection');
   await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toHaveCount(0);
+});
+
+test('compact rows safely fall back with enlarged text at 390px',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  await page.addStyleTag({content:'html {font-size:200% !important}'});
+  await page.getByRole('button',{name:'Add Mutton leg piece',exact:true}).click();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  const increase=page.getByRole('button',{name:'Increase Mutton leg piece',exact:true});
+  const bounds=await increase.boundingBox();
+  expect(bounds?.width).toBeGreaterThanOrEqual(44);
+  expect(bounds?.height).toBeGreaterThanOrEqual(44);
+  await page.getByRole('button',{name:'Review request'}).click();
+  const sheet=page.getByRole('dialog');
+  expect(await sheet.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
 });

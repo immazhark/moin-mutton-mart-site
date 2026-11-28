@@ -304,11 +304,22 @@ main { max-width: 1120px; margin: 0 auto; }
 .storefront .product-body .rate{font-weight:600;color:var(--muted)}
 .storefront .product-body .add:hover:not(:disabled){background:var(--green-tint)}
 @media(min-width:376px) and (max-width:639px){
-  .storefront .product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .counter-group .product-card:last-child:nth-child(odd){grid-column:1/-1}
-  .counter-group .product-card:last-child:nth-child(odd) .product-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(7rem,auto);gap:var(--s1) var(--s3);align-items:center}
-  .counter-group .product-card:last-child:nth-child(odd) .product-body :is(h3,.unit-hint,.rate,.availability){grid-column:1;margin:0}
-  .counter-group .product-card:last-child:nth-child(odd) .product-body :is(.add,.stepper){grid-column:2;grid-row:1/span 4;align-self:center;margin:0;min-width:0}
+}
+@media(max-width:639px){
+  .storefront .site-header{gap:var(--s2)}
+  .storefront .brand{flex:1 1 0;gap:var(--s2)}
+  .storefront .call{padding-inline:var(--s3)}
+  .storefront .categories button{padding-inline:10px}
+  .storefront .categories{padding-bottom:var(--s4)}
+  .storefront .product-card{container-type:inline-size}
+  /* A wide individual card earns a compact horizontal treatment. Root text
+     scaling increases the rem threshold and naturally restores stacked content. */
+  @container (min-width:18rem){
+    .storefront .product-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(9rem,auto);gap:var(--s1) var(--s3);align-items:center}
+    .storefront .product-body :is(h3,.unit-hint,.rate,.availability){grid-column:1;margin:0}
+    .storefront .product-body :is(.add,.stepper){grid-column:2;grid-row:1/span 4;align-self:center;margin:0;min-width:0}
+  }
 }
 @media(min-width:640px){
   .counter-groups{gap:var(--s6)}
