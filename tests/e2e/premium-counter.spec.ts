@@ -91,7 +91,7 @@ test('themed counter, signature artwork and motion preserve direct shopping',asy
     const original=Element.prototype.animate;
     const calls:string[]=[];
     Object.defineProperty(window,'__motionTestCalls',{value:calls});
-    Element.prototype.animate=function(...args:Parameters<typeof original>){
+    Element.prototype.animate=function(this:Element,...args:Parameters<typeof original>){
       if(this instanceof HTMLElement&&this.dataset.motionTarget)calls.push(this.dataset.motionTarget);
       return original.apply(this,args);
     };
@@ -114,7 +114,8 @@ test('themed counter, signature artwork and motion preserve direct shopping',asy
   await page.getByRole('button',{name:'Increase Mutton with bone',exact:true}).click();
   expect((await calls()).length).toBe(before);
   await page.getByRole('button',{name:'Review request'}).click();
-  await expect(page.getByRole('dialog').locator('.receipt-intro')).toBeVisible();
+  await expect(page.getByRole('dialog').locator('.receipt-intro')).toHaveCount(3);
+  await expect(page.getByRole('dialog').locator('.receipt-intro').first()).toBeVisible();
   await expect(page.getByRole('dialog').getByText('1 kg',{exact:true})).toBeVisible();
   await expect(page.getByRole('button',{name:'Check latest rates & availability'})).toBeVisible();
 });

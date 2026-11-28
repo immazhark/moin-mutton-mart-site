@@ -355,3 +355,7 @@ Verified 5c4b5bc / synthetic merge ac9ff44 (same tree): six workflows successful
 
 ### Visual acceptance reset (28 November 2026)
 User rejected Phase 8 design. Status: visual gate FAILED; new draft PR #16 implements hero, secondary banner, local illustrative photography, visual categories and warmer palette. Preview 3660d2c actual 320/390/1280 rendered review; further responsive corrections pending exact-head CI. No new dependency, no live changes. Actual product imagery and approval still blocked. See VISUAL-COMMERCE-RESET.md. Do not close B3 or §15 on lab scores alone.
+
+
+### Creative experience reset (28 November 2026)
+Visual gate remains open/failed on user feedback. PR #16 new themed counter chapters, custom cut illustrations, animated hero seal, user-triggered basket feedback, reduced-motion-aware category and chapter choreography, receipt hierarchy and owner draft metrics. ece8569 actual 320/390/1280 visual review. Full CI branch filters corrected 6742c18; latest verification pending. No score claimed. Existing backend, product and pricing contracts remain. See VISUAL-COMMERCE-RESET.md for evidence and next steps.

@@ -472,3 +472,12 @@ main { max-width: 1120px; margin: 0 auto; }
 @keyframes receipt-arrive{from{opacity:.7;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes backdrop-arrive{from{opacity:0}to{opacity:1}}
 @media(forced-colors:active){.counter-chapter,.counter-group,.receipt-intro,.basket-icon,.market-hero-photo{border:1px solid CanvasText}.hero-seal{display:none}.counter-chapter .group-title,.chapter-copy p,.chapter-subtitle{color:CanvasText!important}}
+
+/* Render refinement: keep desktop commerce above the fold and give each chapter its own graphic rhythm. */
+.counter-chapter::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.15;background:repeating-linear-gradient(125deg,transparent 0 19px,currentColor 20px 21px,transparent 22px 31px);mask-image:linear-gradient(to right,transparent 35%,#000)}
+.counter-group[data-theme=chicken] .counter-chapter::after{background:repeating-radial-gradient(ellipse at 100% 100%,transparent 0 16px,currentColor 17px 18px,transparent 19px 25px)}
+.counter-group[data-theme=speciality] .counter-chapter::after{background:repeating-linear-gradient(45deg,transparent 0 15px,currentColor 16px 17px,transparent 18px 30px)}
+.chapter-mark{position:relative;z-index:1}
+@media(min-width:640px){.market-hero{min-height:212px;margin-bottom:14px}.market-hero-copy{padding:20px 35px}.market-headline{font-size:clamp(2.65rem,4.1vw,3.4rem);margin-bottom:7px}.market-intro{margin-bottom:8px}.market-hero-photo{margin-block:13px}.storefront .categories button{min-height:64px}.category-visual{height:46px}.counter-chapter{min-height:72px;padding-block:8px}.storefront .counter-chapter .group-title{font-size:1.75rem}.chapter-mark{width:74px;flex-basis:74px}.counter-group{padding:9px}.storefront .product-body{padding:11px}}
+@media(min-width:640px) and (max-width:900px){.market-hero-copy{padding:17px 22px}.market-headline{font-size:2.55rem}.storefront .categories button{gap:6px;padding-inline:7px}.category-visual{width:42px;flex-basis:42px}.category-label{font-size:.8rem}}
+@media(forced-colors:active){.counter-chapter::after{display:none}}

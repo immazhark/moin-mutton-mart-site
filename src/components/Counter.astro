@@ -54,7 +54,7 @@ function unitHint(p:Product){
   <p class="category-disclosure">Category photos are illustrative.</p>
   <div class="counter-groups" data-role="grid">
     {groups.map(group=><section class="counter-group" data-group={group.name} data-theme={themes[group.name]?.key} data-motion-target="category" aria-labelledby={group.id}>
-      <div class="counter-chapter">
+      <div class="counter-chapter" data-motion-reveal>
         <div class="chapter-copy"><p>{themes[group.name]?.chapter}</p><h2 class="group-title" id={group.id}>{group.name}</h2><span class="chapter-subtitle">{themes[group.name]?.subtitle}</span></div>
         <div class="chapter-mark" aria-hidden="true"><CutMark product={themes[group.name]?.mark??'mutton-bone'}/></div>
       </div>

@@ -28,7 +28,7 @@ export function createCounterMotion(root:HTMLElement){
     if(!target)return;
     animate(target,[{transform:'scale(.87)'},{transform:'scale(1.1)',offset:.55},{transform:'scale(1)'}],260);
     // One token only. Do not animate out of view or interfere with touch targets.
-    token?.remove();token=null;
+    if(token){active.get(token)?.cancel();token.remove();token=null;}
     const from=card.getBoundingClientRect(),to=target.getBoundingClientRect();
     if(from.bottom<=0||from.top>=innerHeight||to.bottom<=0||to.top>=innerHeight)return;
     const x=Math.min(innerWidth-15,Math.max(15,from.right-20)),y=Math.min(innerHeight-15,Math.max(15,from.top+18));
