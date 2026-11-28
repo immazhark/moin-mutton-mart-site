@@ -73,6 +73,8 @@ test('owner membership gates editing, session is separate from public, audited s
   await expect(page.getByText('Backup loaded into the draft. Review all changes before saving. Nothing has been published.')).toBeVisible();
   await expect(page.getByRole('button',{name:'Save changes'})).toBeDisabled();
   await expect(rate).toBeEnabled();
+  await page.locator('.owner-tools').scrollIntoViewIfNeeded();
+  console.log('OWNER_QA_SCREENSHOT '+(await page.screenshot({type:'jpeg',quality:60})).toString('base64'));
   await env.withSecurityRulesDisabled(async context=>{
     const db=context.firestore();
     const current=(await getDocFromServer(doc(db,'public','catalogue'))).data()!;
