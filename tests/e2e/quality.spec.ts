@@ -1,4 +1,6 @@
 import {test,expect} from '@playwright/test';
+import {readdirSync,readFileSync,lstatSync} from 'node:fs';
+import {join,relative} from 'node:path';
 
 test('unknown paths return a genuine 404 with a native route back to the shop',async({browser})=>{
   const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:320,height:700}});
@@ -32,5 +34,24 @@ test('public HTML has one primary heading, declared language and no duplicate ID
       return [...dupes];
     });
     expect(duplicates).toEqual([]);
+  }
+});
+
+test('the ordinary deployment artifact contains no QA harnesses, source maps or private files',()=>{
+  const root=join(process.cwd(),'dist');
+  const visit=(directory:string):string[]=>readdirSync(directory).flatMap(name=>{
+    const path=join(directory,name),entry=lstatSync(path);
+    expect(entry.isSymbolicLink(),relative(root,path)).toBe(false);
+    return entry.isDirectory()?visit(path):[path];
+  });
+  const files=visit(root);
+  const names=files.map(path=>relative(root,path).replaceAll('\\','/'));
+  expect(names).toEqual(expect.arrayContaining(['index.html','admin/index.html','privacy/index.html','404.html','_headers','robots.txt','sitemap.xml']));
+  for(const [i,name] of names.entries()){
+    expect(name).not.toMatch(/(?:^|\/)(?:\.env[^/]*|\.git|reference|tests|firebase|docs|node_modules)(?:\/|$)|\.map$/);
+    if(!/\.(?:html|js|mjs|css)$/.test(name))continue;
+    const content=readFileSync(files[i],'utf8');
+    expect(content,name).not.toMatch(/qa-lose-ack|qa-create-owner|qa-probe-auth|Synthetic lost acknowledgement|qa-emulator-network|127\.0\.0\.1:8088|127\.0\.0\.1:9099/);
+    if(name.endsWith('.html'))expect(content,name).toMatch(/<meta[^>]+name=["']robots["'][^>]+content=["']noindex,nofollow["']/i);
   }
 });

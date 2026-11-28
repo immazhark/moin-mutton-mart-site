@@ -19,9 +19,9 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts
-      - name: Audit using an isolated pinned tool version (advisory, never auto-fix)
+      - name: Audit using an isolated pinned tool version (read-only, never auto-fix)
         run: |
           mkdir -p "$RUNNER_TEMP/moin-knip"
           npm install --prefix "$RUNNER_TEMP/moin-knip" --ignore-scripts --no-fund --no-audit --save-exact knip@6.41.0
           npm audit --prefix "$RUNNER_TEMP/moin-knip" --audit-level=high
-          "$RUNNER_TEMP/moin-knip/node_modules/.bin/knip" --include files,dependencies,unlisted,exports,types --no-exit-code
+          "$RUNNER_TEMP/moin-knip/node_modules/.bin/knip" --include files,dependencies,unlisted,exports,types
