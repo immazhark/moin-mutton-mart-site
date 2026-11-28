@@ -74,3 +74,36 @@ test('brand link includes its visible identity and pending handoff is not an emp
   await expect(pending).toBeHidden();
   expect(await pending.getAttribute('href')).toBeNull();
 });
+
+
+test('each public route declares a small, resolvable local brand icon',async({page,request})=>{
+  for(const path of ['/','/privacy/','/admin/','/404.html']){
+    await page.goto(path);
+    const icon=page.locator('head link[rel="icon"]');
+    await expect(icon).toHaveCount(1);
+    await expect(icon).toHaveAttribute('type','image/png');
+    const href=await icon.getAttribute('href');
+    expect(href).toMatch(/^\/(?!\/)/);
+    const response=await request.get(href!);
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-type']).toContain('image/png');
+    const bytes=await response.body();
+    expect(bytes.length).toBeLessThan(15_000);
+    expect(bytes.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
+  }
+});
+
+test('privacy clear control reserves its space without scripting and only enables with JavaScript',async({browser,page})=>{
+  const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}});
+  try{
+    const offline=await context.newPage();
+    await offline.goto('/privacy/');
+    const control=offline.getByRole('button',{name:'Clear saved basket'});
+    await expect(control).toBeVisible();
+    await expect(control).toBeDisabled();
+    expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await expect(offline.getByText('Remove this site’s stored data in your browser settings')).toBeVisible();
+  }finally{await context.close();}
+  await page.goto('/privacy/');
+  await expect(page.getByRole('button',{name:'Clear saved basket'})).toBeEnabled();
+});
