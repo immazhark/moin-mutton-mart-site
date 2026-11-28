@@ -6,7 +6,8 @@ import {getActiveMembership,getCatalogueFromServer,saveCatalogue} from '../lib/c
 import {buildDraft,decodeBackup,encodeBackup,formFromCatalogue,formFromDraft,MAX_BACKUP_BYTES,visibilityOptions,availabilityOptions,type OwnerForm,type OfferForm} from '../lib/catalogue/owner-form';
 import {planPublication,type SaveIntent} from '../lib/catalogue/publication';
 import type {Catalogue} from '../lib/catalogue/contract';
-import {products} from '../data/products';
+import {products,categories} from '../data/products';
+import {clearRecovery,readRecovery,storeRecovery} from '../lib/catalogue/owner-recovery';
 
 type AuthState = {kind:'loading'}|{kind:'unconfigured'}|{kind:'error'}|{kind:'ready';services:FirebaseServices;user:User|null};
 function messageForAuth(error:unknown):string{
@@ -25,7 +26,7 @@ export default function OwnerConsole(){
     try{
       const services=getFirebaseServices();
       if(!services){setAuth({kind:'unconfigured'});return;}
-      return onAuthStateChanged(services.auth,user=>{setAuth({kind:'ready',services,user});setAuthError('');},()=>setAuth({kind:'error'}));
+      return onAuthStateChanged(services.auth,user=>{if(!user)clearRecovery();setAuth({kind:'ready',services,user});setAuthError('');},()=>setAuth({kind:'error'}));
     }catch{setAuth({kind:'error'});}
   },[]);
   async function login(services:FirebaseServices){
@@ -52,16 +53,28 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
   const [error,setError]=useState('');
   const [checking,setChecking]=useState(false);
   const pending=useRef<SaveIntent|null>(null);
+  const recoveryChecked=useRef(false),pendingSince=useRef(0),recoveryStored=useRef(false);
+  const [category,setCategory]=useState<(typeof categories)[number]>('All');
+  const [search,setSearch]=useState('');
+  const [changedOnly,setChangedOnly]=useState(false);
+  const [recoveryWarning,setRecoveryWarning]=useState(false);
+  const scope={projectId:services.db.app.options.projectId??'',uid:user.uid};
   const alive=useRef(false), serial=useRef(0), busy=useRef(false), memberCheck=useRef(false);
   const fileRef=useRef<HTMLInputElement>(null);
+  const errorRef=useRef<HTMLParagraphElement>(null);
+  useEffect(()=>{if(error)errorRef.current?.focus();},[error]);
   const operationBusy=saveState==='saving'||checking||load==='loading';
-  const dirty=!!(form&&base&&JSON.stringify(form)!==JSON.stringify(formFromCatalogue(base)));
+  const savedForm=base?formFromCatalogue(base):null;
+  const dirty=!!(form&&savedForm&&JSON.stringify(form)!==JSON.stringify(savedForm));
+  const changedIds=new Set(form&&savedForm?products.filter(p=>JSON.stringify(form.offers[p.id])!==JSON.stringify(savedForm.offers[p.id])).map(p=>p.id):[]);
+  const visibleProducts=products.filter(p=>(category==='All'||p.category===category)&&
+    p.name.toLowerCase().includes(search.trim().toLowerCase())&&(!changedOnly||changedIds.has(p.id)));
   const unresolved=saveState==='uncertain';
   const missingBasis=products.filter(p=>!p.pricingBasis);
   const isCurrent=()=>alive.current&&services.auth.currentUser?.uid===user.uid;
   function deny(){
     if(!isCurrent())return;
-    serial.current++;pending.current=null;setBase(null);setForm(null);setSaveState('idle');setLoad('denied');setError('');setNotice('');
+    serial.current++;pending.current=null;clearRecovery();setRecoveryWarning(false);setBase(null);setForm(null);setSaveState('idle');setLoad('denied');setError('');setNotice('');
   }
   async function refresh(discard=false){
     if(busy.current||memberCheck.current)return;
@@ -73,7 +86,22 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
       if(!member){deny();return;}
       const catalogue=await getCatalogueFromServer(services.db,products);
       if(!isCurrent()||version!==serial.current)return;
-      pending.current=null;setBase(catalogue);setForm(formFromCatalogue(catalogue));setSaveState('idle');setLoad('ready');
+      setBase(catalogue);setLoad('ready');
+      if(!recoveryChecked.current){
+        recoveryChecked.current=true;
+        const recovery=readRecovery(scope,products);
+        if(recovery.kind==='pending'){
+          pending.current=recovery.record.intent;pendingSince.current=recovery.record.createdAt;recoveryStored.current=true;
+          setForm(formFromDraft(recovery.record.intent.draft));setSaveState('uncertain');
+          setError('An interrupted save was recovered. Verify / retry checks the exact previous operation; nothing is sent automatically.');
+          return;
+        }
+        if(recovery.kind==='invalid'){
+          setRecoveryWarning(true);
+          setNotice('A previous recovery record could not be restored. Check the latest catalogue and have the previous audit verified before making another save.');
+        }
+      }
+      pending.current=null;setForm(formFromCatalogue(catalogue));setSaveState('idle');
     }catch{
       if(isCurrent()&&version===serial.current){setLoad(current=>current==='ready'||current==='refresh-required'?'refresh-required':'error');setError('Could not verify access or load the latest catalogue. Check your connection and retry.');}
     }finally{busy.current=false;if(isCurrent())setChecking(false);}
@@ -109,16 +137,18 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
     if(busy.current||memberCheck.current||!base||!form||load!=='ready'&&!retry)return;
     let intent=pending.current;
     if(!retry){
-      if(saveState!=='idle'||intent)return;
+      if(saveState!=='idle'||intent||recoveryWarning)return;
       try{
         const draft=buildDraft(form,products);
         intent={expectedRevision:base.revision,operationId:crypto.randomUUID(),draft};
         const decision=planPublication(base,intent,user.uid,null,products);
-        if(decision.kind==='unchanged'){setNotice('No changes to save.');return;}
+        if(decision.kind==='unchanged'){setForm(formFromCatalogue(base));setNotice('No changes to save.');return;}
       }catch(e){setError(e instanceof Error?e.message:'Check the catalogue fields.');return;}
-      pending.current=intent;
+      pending.current=intent;pendingSince.current=Date.now();
     }
     if(!intent)return;
+    // Record before starting any asynchronous save; never extend the original TTL.
+    recoveryStored.current=storeRecovery(scope,intent,products,pendingSince.current);
     busy.current=true;setSaveState('saving');setError('');setNotice('');
     let result;
     try{
@@ -126,14 +156,14 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
       if(!isCurrent())return;
       result=await saveCatalogue(services.db,user.uid,intent,products);
     }catch{
-      if(isCurrent()){setSaveState('uncertain');setError('The save outcome could not be verified. Retry this exact save to check whether it already committed. No new operation will be created.');}
+      if(isCurrent()){setSaveState('uncertain');setError('The save outcome could not be verified. Retry this exact save to check whether it already committed. No new operation will be created. '+(recoveryStored.current?'Recovery is available in this tab for up to two hours from the first attempt.':'Recovery storage is unavailable. Keep this tab open and retry; if it closes, check the audit before making another save.'));}
       return;
     }finally{busy.current=false;}
     if(!isCurrent())return;
-    pending.current=null;
+    pending.current=null;clearRecovery();recoveryStored.current=false;
     if(result.kind==='conflict'){setSaveState('conflict');setError('Another editor updated the catalogue. Your draft is preserved. Export it if needed, then reload the latest version and review changes before saving.');return;}
     setSaveState('idle');
-    setNotice(result.kind==='unchanged'?'No changes to save.':'Saved successfully. Revision '+result.revision+'.');
+    setNotice(result.kind==='unchanged'?'No changes to save.':'Saved successfully. Revision '+result.revision+'.'+(result.kind==='already_committed'?' The earlier save was already committed.':''));
     await refresh(true);
   }
   function exportDraft(){
@@ -159,16 +189,16 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
   }
   async function leave(){
     if(busy.current||memberCheck.current)return;
-    if((dirty||unresolved)&&!window.confirm('Sign out and discard this local draft? If a save was uncertain, its outcome may still need checking.'))return;
+    if((dirty||unresolved)&&!window.confirm('Sign out and discard the local draft and recovery record? An uncertain save may already have committed. Check its audit before another save.'))return;
     busy.current=true;setChecking(true);
-    try{await signOut(services.auth);}catch{if(isCurrent())setError('Sign-out failed. Try again.');}
+    try{await signOut(services.auth);clearRecovery();}catch{if(isCurrent())setError('Sign-out failed. Try again.');}
     finally{busy.current=false;if(isCurrent())setChecking(false);}
   }
   const controlsDisabled=operationBusy||saveState!=='idle'||load!=='ready';
   return <section className="owner-console">
-    <div className="owner-session"><div><strong>Owner session</strong><small>{user.email??'Google account'}</small></div><button className="owner-secondary" disabled={operationBusy} onClick={()=>void leave()}><LogOut size={17}/> Sign out</button></div>
+    <div className="owner-session"><div><strong>Owner session</strong><small>Signed in with Google</small></div><button className="owner-secondary" disabled={operationBusy} onClick={()=>void leave()}><LogOut size={17}/> Sign out</button></div>
     {notice&&<p className="owner-success" role="status">{notice}</p>}
-    {error&&<p className="owner-error" role="alert"><AlertCircle size={18}/>{error}</p>}
+    {error&&<p ref={errorRef} tabIndex={-1} className="owner-error" role="alert"><AlertCircle size={18}/>{error}</p>}
     {load==='loading'&&<p role="status">Checking administrator access…</p>}
     {load==='denied'&&<section className="owner-panel"><h2>Access not authorised</h2><p>This account is not an active shop administrator. Sign out and use the authorised account.</p></section>}
     {load==='error'&&<section className="owner-panel"><h2>Catalogue unavailable</h2><button className="owner-secondary" disabled={checking} onClick={()=>void refresh()}>Retry connection</button></section>}
@@ -181,24 +211,32 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
         <label className="owner-toggle"><input type="checkbox" checked={form.showPrices} onChange={e=>{setForm({...form,showPrices:e.target.checked});setNotice('');}}/> Show saved rates by default</label>
         <p className="owner-muted">Hiding rates changes their display, not the public data. Stock is manual, never reserved or deducted automatically.</p>
       </fieldset>
-      <div className="owner-section-title"><h2>Today's counter</h2><span>{products.length} items</span></div>
+      {recoveryWarning&&<section className="owner-panel" aria-label="Previous save needs review"><h2>Check the previous save</h2><p>Review the latest rates and ask the site administrator to verify the prior audit before enabling publication.</p><button className="owner-secondary" disabled={operationBusy||load!=='ready'} onClick={()=>{setRecoveryWarning(false);setNotice('Previous save review acknowledged.');}}>I have checked the previous save</button></section>}
+      <div className="owner-section-title"><h2>Today's counter</h2><span>{changedIds.size} of {products.length} items changed</span></div>
+      <div className="owner-tools">
+        <label className="owner-search">Find a product<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search the range"/></label>
+        <div className="owner-filters" role="group" aria-label="Product category">{categories.map(c=><button type="button" key={c} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}</div>
+        <label className="owner-toggle"><input type="checkbox" checked={changedOnly} onChange={e=>setChangedOnly(e.target.checked)}/> Changed only</label>
+        <p className="owner-muted" role="status">{visibleProducts.length} of {products.length} shown. Your draft is preserved.</p>
+      </div>
+      {!visibleProducts.length&&<p className="owner-panel">No matching products. Change the filters to see the range.</p>}
       <div className="owner-grid">{products.map(product=>{
         const o=form.offers[product.id];const unit=product.unit==='g'?'grams':product.unit==='piece'?'pieces':'sets';
-        return <fieldset className="owner-product" key={product.id} disabled={controlsDisabled}>
-          <legend>{product.name}</legend><p className="owner-muted">{product.category} · Rate basis: {product.pricingBasis??'unconfirmed'}</p>
+        return <fieldset className="owner-product" key={product.id} hidden={!visibleProducts.includes(product)} disabled={controlsDisabled}>
+          <legend>{product.name}</legend>{changedIds.has(product.id)&&<span className="owner-changed">Edited</span>}<p className="owner-muted">{product.category} · Rate basis: {product.pricingBasis??'unconfirmed'}</p>
           <label className="owner-toggle"><input type="checkbox" checked={o.enabled} onChange={e=>patch(product.id,{enabled:e.target.checked})}/> Listed in shop</label>
           <div className="owner-fields"><label>Rate (₹)<input aria-label={product.name+' rate in rupees'} inputMode="decimal" maxLength={10} value={o.price} onChange={e=>patch(product.id,{price:e.target.value})} placeholder="No rate"/></label>
           <label>Availability<select aria-label={product.name+' availability'} value={o.availability} onChange={e=>patch(product.id,{availability:e.target.value as OfferForm['availability']})}>{availabilityOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
-          <details><summary>Rate visibility & stock</summary>
+          <label>Stock ({unit})<input aria-label={product.name+' stock in '+unit} inputMode="numeric" maxLength={10} value={o.stock} onChange={e=>patch(product.id,{stock:e.target.value})} placeholder="Unknown"/></label><small className="owner-muted">Blank = unknown. Zero = none available.</small>
+          <details><summary>Rate visibility</summary>
             <label>Rate display<select aria-label={product.name+' rate display'} value={o.priceVisibility} onChange={e=>patch(product.id,{priceVisibility:e.target.value as OfferForm['priceVisibility']})}>{visibilityOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-            <label>Stock ({unit})<input aria-label={product.name+' stock in '+unit} inputMode="numeric" maxLength={10} value={o.stock} onChange={e=>patch(product.id,{stock:e.target.value})} placeholder="Unknown"/></label><small>Blank = unknown. Zero = none available.</small>
           </details>
         </fieldset>;
       })}</div>
       <section className="owner-panel owner-backup"><h2>Private backup</h2><p>Export a validated draft to your device or load a backup for review. Restoring never bypasses the normal audited save.</p><div className="owner-actions"><button className="owner-secondary" disabled={operationBusy} onClick={exportDraft}><Download size={17}/> Export draft</button><button className="owner-secondary" disabled={controlsDisabled} onClick={()=>fileRef.current?.click()}><Upload size={17}/> Load backup</button><input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={e=>void importDraft(e)}/></div></section>
-      <div className="owner-save"><div><strong>{unresolved?'Save needs verification':saveState==='conflict'?'Revision conflict':dirty?'Unsaved changes':'All changes saved'}</strong><small>{missingBasis.length?'Charging units need approval':'Changes publish together'}</small></div><div className="owner-actions">
+      <div className="owner-save"><div><strong>{unresolved?'Save needs verification':saveState==='conflict'?'Revision conflict':dirty?'Unsaved changes':'All changes saved'}</strong><small>{missingBasis.length?'Charging units need approval':unresolved?'Check the same operation, never a duplicate':'Changes publish together'}</small></div><div className="owner-actions">
         {!unresolved&&<button className="owner-secondary" disabled={operationBusy} onClick={()=>{if(!dirty||window.confirm('Discard this draft and load the current catalogue?'))void refresh(true);}}><RefreshCw size={17}/> Reload</button>}
-        <button className="owner-primary" disabled={operationBusy||saveState==='conflict'||(!unresolved&&(!dirty||missingBasis.length>0||load!=='ready'))} onClick={()=>void save(unresolved)}><Save size={17}/>{saveState==='saving'?'Saving…':unresolved?'Verify / retry':'Save changes'}</button>
+        <button className="owner-primary" disabled={operationBusy||saveState==='conflict'||(!unresolved&&(!dirty||missingBasis.length>0||load!=='ready'||recoveryWarning))} onClick={()=>void save(unresolved)}><Save size={17}/>{saveState==='saving'?'Saving…':unresolved?'Verify / retry':'Save changes'}</button>
       </div></div>
     </>}
   </section>;

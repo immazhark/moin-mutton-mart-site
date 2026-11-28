@@ -24,6 +24,8 @@ const edit=(path,from,to)=>{
 // Only the disposable copy targets loopback, never the actual production source.
 edit('src/lib/catalogue/public-read.ts','https://firestore.googleapis.com/v1/','http://127.0.0.1:8088/v1/');
 edit('src/pages/admin/index.astro',"import OwnerConsole from '../../components/OwnerConsole';","import OwnerConsole from '../../components/OwnerHarness';");
+// Simulate a lost acknowledgement only after a real commit in this disposable fixture.
+edit('src/components/OwnerConsole.tsx','result=await saveCatalogue(services.db,user.uid,intent,products);', "result=await saveCatalogue(services.db,user.uid,intent,products); if(sessionStorage.getItem('qa-lose-ack')==='1'){sessionStorage.removeItem('qa-lose-ack');throw Error('Synthetic lost acknowledgement');}");
 edit('src/data/products.ts','pricingBasis: null,','pricingBasis: unit === \'g\' ? \'kg\' : unit,');
 NODE
 (

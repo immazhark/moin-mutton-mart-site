@@ -213,6 +213,12 @@ export function mountCounter(root:HTMLElement){
     renderCopy();
   }
   function render(){renderCards();renderLines();renderAction();}
+  function forgetOrderDetails(){orderNote.value='';fulfilment='discuss';otherOpen.clear();}
+  function clearBasketFromStorage(){
+    if(!items.length)return;
+    items=[];startedAt=0;forgetOrderDetails();edited();render();
+    if(dialog.open)button(empty,'close').focus();
+  }
   function change(id:string,delta:-1|1){
     const p=indexed.get(id);if(!p)return;
     const before=selection(id),q=(before?.quantity??0)+delta*p.step;
@@ -220,10 +226,11 @@ export function mountCounter(root:HTMLElement){
     if(q<=0)items=items.filter(s=>s.productId!==id);
     else if(before)before.quantity=q;
     else items.push({productId:id,quantity:q,note:''});
+    if(!items.length)forgetOrderDetails();
     persist();edited();render();
   }
   function remove(id:string){
-    items=items.filter(s=>s.productId!==id);persist();edited();render();
+    items=items.filter(s=>s.productId!==id);if(!items.length)forgetOrderDetails();persist();edited();render();
   }
   function begin(){
     if(dialog.open||closing||!items.length)return;
@@ -310,7 +317,12 @@ export function mountCounter(root:HTMLElement){
     (items.length?opener:search).focus();
   });
   window.addEventListener('popstate',syncHistory);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&session.needsRefresh())void session.refresh();});
+  window.addEventListener('storage',event=>{if((event.key===STORAGE_KEY||event.key===null)&&event.newValue===null){try{if(event.storageArea===localStorage)clearBasketFromStorage();}catch{/* Storage disabled. */}}});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState!=='visible')return;
+    if(startedAt&&(Date.now()<startedAt||Date.now()-startedAt>RETENTION_MS)){clearBasketFromStorage();try{localStorage.removeItem(STORAGE_KEY);}catch{/* Storage disabled. */}}
+    if(session.needsRefresh())void session.refresh();
+  });
   session.subscribe(()=>{if(grant&&grant.snapshot!==session.getSnapshot())revoke();render();});
   copy.subscribe(renderCopy);
   try{const draft=decodeDraft(localStorage.getItem(STORAGE_KEY),products);if(draft){items=draft.items;startedAt=draft.startedAt;}else localStorage.removeItem(STORAGE_KEY);}catch{/* Memory-only. */}
