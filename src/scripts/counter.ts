@@ -115,6 +115,9 @@ export function mountCounter(root:HTMLElement){
       if(match)visible++;
     }
     for(const el of root.querySelectorAll<HTMLButtonElement>('[data-category-filter]'))el.setAttribute('aria-pressed',String(el.dataset.categoryFilter===category));
+    for(const group of grid.querySelectorAll<HTMLElement>('[data-group]')){
+      show(group,!!group.querySelector('.product-card:not([hidden])'));
+    }
     show(grid,visible>0);show(none,visible===0);
     text(none,'Nothing in the range matches “'+search.value+'”. Try another word or call the shop.');
   }

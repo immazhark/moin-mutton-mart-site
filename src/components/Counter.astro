@@ -3,6 +3,7 @@ import {Search,ShoppingBasket,Plus,Minus,X,Trash2,MessageCircle,Phone,Copy,Chevr
 import {products,categories} from '../data/products';
 import {shop,callUrl} from '../data/shop';
 import {MAX_LINE_NOTE,MAX_ORDER_NOTE,formatQuantity,type Product} from '../lib/order/order';
+const groups=[...new Set(products.map(p=>p.category))].map((name,i)=>({name,id:'cut-group-'+i,products:products.filter(p=>p.category===name)}));
 function unitHint(p:Product){
   if(p.unit==='g')return 'From';
   if(p.unit==='set')return p.setContents?'Per set ·':'Per set';
@@ -13,7 +14,7 @@ function unitHint(p:Product){
   <div class="shop-head">
     <div class="counter-intro">
       <h1 id="shop-title">Choose your cuts</h1>
-      <p class="counter-instruction">Select your quantities. Confirm with the shop on WhatsApp.</p>
+      <p class="counter-instruction">Add cuts, then review on WhatsApp.</p>
     </div>
     <p class="status" role="status" data-role="status">Checking current availability…</p>
   </div>
@@ -21,12 +22,14 @@ function unitHint(p:Product){
   <div class="categories" role="group" aria-label="Categories">
     {categories.map(category=><button type="button" data-category-filter={category} aria-pressed={category==='All'}>{category}</button>)}
   </div>
-  <div class="product-grid" data-role="grid">
-    {products.map(p=>{
+  <div class="counter-groups" data-role="grid">
+    {groups.map(group=><section class="counter-group" data-group={group.name} aria-labelledby={group.id}>
+      <h2 class="group-title" id={group.id}>{group.name}</h2>
+      <div class="product-grid">
+    {group.products.map(p=>{
       return <article class="product-card" data-category={p.category} data-product={p.id}>
         <div class="product-body">
-          <p class="cut-category">{p.category}</p>
-          <h2>{p.name}</h2>
+          <h3>{p.name}</h3>
           <p class="unit-hint">{unitHint(p)}{p.unit==='g'&&<> <span class="unit-amount">{formatQuantity(p,p.step)}</span></>}{p.unit==='set'&&p.setContents&&<> <span class="unit-amount">{p.setContents}</span></>}</p>
           <p class="rate" data-role="rate">Ask for today’s rate</p><p class="availability" data-role="availability" hidden>Confirm with shop</p>
           <button type="button" class="add" data-action="increase" aria-label={'Add '+p.name}><Plus size={18} aria-hidden="true"/> Add</button>
@@ -38,6 +41,8 @@ function unitHint(p:Product){
         </div>
       </article>;
     })}
+      </div>
+    </section>)}
   </div>
   <p class="no-results" data-role="no-results" hidden></p>
   <details class="quantity-guide">

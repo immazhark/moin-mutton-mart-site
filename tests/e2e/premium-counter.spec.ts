@@ -17,8 +17,11 @@ for(const width of [360,390,768,1280,1920]){
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.getByRole('button',{name:'Chicken',exact:true}).click();
     await expect(page.locator('.product-card:visible')).toHaveCount(3);
+    await expect(page.locator('.counter-group:visible')).toHaveCount(1);
+    await expect(page.locator('.counter-group:visible .group-title')).toHaveText('Chicken');
     await page.getByRole('button',{name:'All',exact:true}).click();
     await expect(page.locator('.product-card:visible')).toHaveCount(13);
+    await expect(page.locator('.counter-group:visible')).toHaveCount(3);
   });
 }
 test('review readiness is explicit and immediately reset by edits',async({page})=>{

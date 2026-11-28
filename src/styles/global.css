@@ -85,12 +85,9 @@ main { max-width: 1120px; margin: 0 auto; }
 .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.75rem), 1fr)); gap: var(--s3); }
 .product-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); display: flex; flex-direction: column; min-width: 0; }
 /* Text-first merchandise: approved photos can be introduced later without fake imagery. */
-.cut-category { font-size:.75rem; font-weight:650; line-height:1.35; color:var(--maroon); margin:0 0 var(--s1); }
-.product-card[data-category='Chicken'] .cut-category { color:#755a24; }
-.product-card[data-category='Speciality cuts'] .cut-category { color:var(--green); }
 .unit-amount { white-space:nowrap; font-variant-numeric:tabular-nums; }
 .product-body { padding: var(--s2); display: flex; flex-direction: column; flex: 1; }
-.product-body h2 { font-size: 1rem; line-height: 1.3; margin: 0 0 var(--s1); }
+.product-body h3 { font-size: 1rem; line-height: 1.3; margin: 0 0 var(--s1); }
 .unit-hint { font-size: 0.875rem; color: var(--muted); margin: 0 0 var(--s1); }
 .rate { font-size: 0.875rem; font-weight: 600; margin: 0 0 var(--s3); font-variant-numeric: tabular-nums; }
 .product-body .add, .product-body .stepper { margin-top: auto; }
@@ -255,7 +252,7 @@ main { max-width: 1120px; margin: 0 auto; }
 .storefront .product-card{border-radius:var(--r-md);transition:border-color 120ms,background-color 120ms}
 .storefront .product-card[data-selected='true']{border-color:var(--green);background:#fafffb}
 .storefront .product-body{padding:var(--s3);gap:0}
-.storefront .product-body h2{font-size:1.0625rem;line-height:1.25;margin-block:0 var(--s1);letter-spacing:-.015em;text-wrap:balance}
+.storefront .product-body h3{font-size:1.0625rem;line-height:1.25;margin-block:0 var(--s1);letter-spacing:-.015em;text-wrap:balance}
 .storefront .product-body .unit-hint{font-size:.875rem;margin-bottom:var(--s2)}
 .storefront .product-body .rate{margin:0 0 var(--s3);font-size:.875rem;font-weight:650;line-height:1.35}
 .availability{font-size:.8125rem;color:var(--muted);line-height:1.35;margin:0 0 var(--s2)}
@@ -288,8 +285,38 @@ main { max-width: 1120px; margin: 0 auto; }
 .storefront .visit h2{font-family:Georgia,'Times New Roman',serif;font-size:1.5rem;letter-spacing:-.02em}
 .storefront .site-footer nav{gap:var(--s4)}
 @media(min-width:640px){.storefront .shop-head{align-items:flex-end}.storefront .status{text-align:right}.storefront .product-grid{gap:var(--s3)}.storefront .product-body{padding:var(--s4)}}
-@media(max-width:375px){.storefront .product-body{padding:var(--s3)}.storefront .product-body h2{font-size:1.125rem}}
+@media(max-width:375px){.storefront .product-body{padding:var(--s3)}.storefront .product-body h3{font-size:1.125rem}}
 @media(max-width:25rem){.storefront .basket-bar{flex-wrap:nowrap}.storefront .basket-bar button{flex:0 1 auto}}
 @media(max-width:20rem){.storefront .basket-bar{flex-wrap:wrap}.storefront .basket-bar button{flex:1 1 100%}}
 @media(prefers-reduced-motion:reduce){.review-stage .ready-check,.guide-chevron,.storefront .stepper button svg,.storefront .add svg{animation:none!important;transition:none!important;transform:none!important}.quantity-guide[open] .guide-chevron{transform:rotate(90deg)!important}}
 @media(forced-colors:active){.storefront .product-card[data-selected='true']{border:2px solid Highlight}.review-stage[data-stage='ready']{color:CanvasText}}
+
+/* Merchandise sections create the rhythm; no repeated category labels or fake image space. */
+.counter-groups{display:grid;gap:var(--s5)}
+.counter-group{min-width:0}
+.group-title{display:flex;align-items:center;gap:var(--s3);font-family:Georgia,'Times New Roman',serif;font-size:1.25rem;line-height:1.2;color:var(--maroon);margin:0 0 var(--s3);letter-spacing:-.015em}
+.group-title::after{content:"";height:1px;background:var(--line);flex:1}
+.counter-group[data-group='Speciality cuts'] .group-title{color:var(--green)}
+.counter-group[data-group='Chicken'] .group-title{color:#755a24}
+.storefront .categories{padding-bottom:var(--s5)}
+.storefront .counter-instruction{max-width:44ch}
+.storefront .product-body h3{text-wrap:wrap}
+.storefront .product-body .rate{font-weight:600;color:var(--muted)}
+.storefront .product-body .add:hover:not(:disabled){background:var(--green-tint)}
+@media(min-width:376px) and (max-width:639px){
+  .storefront .product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .counter-group .product-card:last-child:nth-child(odd){grid-column:1/-1}
+  .counter-group .product-card:last-child:nth-child(odd) .product-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(7rem,auto);gap:var(--s1) var(--s3);align-items:center}
+  .counter-group .product-card:last-child:nth-child(odd) .product-body :is(h3,.unit-hint,.rate,.availability){grid-column:1;margin:0}
+  .counter-group .product-card:last-child:nth-child(odd) .product-body :is(.add,.stepper){grid-column:2;grid-row:1/span 4;align-self:center;margin:0;min-width:0}
+}
+@media(min-width:640px){
+  .counter-groups{gap:var(--s6)}
+  .storefront .product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .group-title{font-size:1.5rem}
+}
+@media(min-width:960px){.counter-group[data-group='Speciality cuts'] .product-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* Large text keeps the single-column adaptive grid, not the compact horizontal card. */
+@media(min-width:376px) and (max-width:639px){
+  .storefront .product-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,10.75rem),1fr))}
+}
