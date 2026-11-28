@@ -82,3 +82,39 @@ test('quantity guide is useful with native disclosure and reduced motion',async(
     await expect(guide.locator('.guide-copy')).not.toBeVisible();
   }finally{await context.close();}
 });
+
+
+test('themed counter, signature artwork and motion preserve direct shopping',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await page.addInitScript(()=>{
+    const original=Element.prototype.animate;
+    const calls:string[]=[];
+    Object.defineProperty(window,'__motionTestCalls',{value:calls});
+    Element.prototype.animate=function(...args:Parameters<typeof original>){
+      if(this instanceof HTMLElement&&this.dataset.motionTarget)calls.push(this.dataset.motionTarget);
+      return original.apply(this,args);
+    };
+  });
+  await page.goto('/');
+  await expect(page.locator('.hero-seal')).toBeVisible();
+  await expect(page.locator('.counter-group[data-theme]')).toHaveCount(3);
+  await expect(page.locator('.product-card .cut-mark')).toHaveCount(13);
+  await page.getByRole('button',{name:'Chicken',exact:true}).click();
+  await expect(page.locator('.counter-group:visible')).toHaveAttribute('data-theme','chicken');
+  await page.getByRole('button',{name:'All',exact:true}).click();
+  await page.getByRole('button',{name:'Add Mutton with bone',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Increase Mutton with bone',exact:true})).toBeVisible();
+  await expect(page.locator('[data-role="count"]')).toHaveText('1 item');
+  const calls=()=>page.evaluate(()=>Reflect.get(window,'__motionTestCalls') as string[]);
+  expect(await calls()).toContain('basket');
+  expect(await calls()).toContain('category');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  const before=(await calls()).length;
+  await page.getByRole('button',{name:'Increase Mutton with bone',exact:true}).click();
+  expect((await calls()).length).toBe(before);
+  await page.getByRole('button',{name:'Review request'}).click();
+  await expect(page.getByRole('dialog').locator('.receipt-intro')).toBeVisible();
+  await expect(page.getByRole('dialog').getByText('1 kg',{exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Check latest rates & availability'})).toBeVisible();
+});
