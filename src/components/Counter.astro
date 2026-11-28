@@ -1,30 +1,37 @@
 ---
-import {Search,ShoppingBasket,Beef,Drumstick,Plus,Minus,X,Trash2,MessageCircle,Phone,Copy} from 'lucide-react';
+import {Search,ShoppingBasket,Plus,Minus,X,Trash2,MessageCircle,Phone,Copy,ChevronRight,Check,Scale} from 'lucide-react';
 import {products,categories} from '../data/products';
 import {shop,callUrl} from '../data/shop';
 import {MAX_LINE_NOTE,MAX_ORDER_NOTE,formatQuantity,type Product} from '../lib/order/order';
+const groups=[...new Set(products.map(p=>p.category))].map((name,i)=>({name,id:'cut-group-'+i,products:products.filter(p=>p.category===name)}));
 function unitHint(p:Product){
-  if(p.unit==='g')return 'By weight · from '+formatQuantity(p,p.step);
-  if(p.unit==='set')return p.setContents?'Per set · '+p.setContents:'Per set';
+  if(p.unit==='g')return 'From';
+  if(p.unit==='set')return p.setContents?'Per set ·':'Per set';
   return 'Per piece';
 }
 ---
 <section id="catalogue" tabindex="-1" class="catalogue" aria-labelledby="shop-title">
   <div class="shop-head">
-    <h1 id="shop-title">Choose your cuts</h1>
+    <div class="counter-intro">
+      <h1 id="shop-title">Choose your cuts</h1>
+      <p class="counter-instruction">Add cuts. Review, then send on WhatsApp.</p>
+    </div>
     <p class="status" role="status" data-role="status">Checking current availability…</p>
   </div>
   <label class="search"><Search size={18} aria-hidden="true"/><span class="sr-only">Search the range</span><input data-role="search" type="search" dir="auto" placeholder="Search the range"/></label>
   <div class="categories" role="group" aria-label="Categories">
-    {categories.map(category=><button type="button" data-category-filter={category} aria-pressed={category==='All'}>{category}</button>)}
+    {categories.map(category=><button type="button" data-category-filter={category} aria-label={category} aria-pressed={category==='All'}>{category==='Speciality cuts'?'Speciality':category}</button>)}
   </div>
-  <div class="product-grid" data-role="grid">
-    {products.map(p=>{
-      const Icon=p.category==='Chicken'?Drumstick:Beef;
+  <div class="counter-groups" data-role="grid">
+    {groups.map(group=><section class="counter-group" data-group={group.name} aria-labelledby={group.id}>
+      <h2 class="group-title" id={group.id}>{group.name}</h2>
+      <div class="product-grid">
+    {group.products.map(p=>{
       return <article class="product-card" data-category={p.category} data-product={p.id}>
-        <div class="product-photo" role="img" aria-label={p.name+': photograph to come'}><Icon size={30} strokeWidth={1.5} aria-hidden="true"/><span>Photo to come</span></div>
         <div class="product-body">
-          <h2>{p.name}</h2><p class="unit-hint">{unitHint(p)}</p><p class="rate" data-role="rate">Ask for today’s rate</p><p class="unit-hint" data-role="availability">Confirm with shop</p>
+          <h3>{p.name}</h3>
+          <p class="unit-hint">{unitHint(p)}{p.unit==='g'&&<> <span class="unit-amount">{formatQuantity(p,p.step)}</span></>}{p.unit==='set'&&p.setContents&&<> <span class="unit-amount">{p.setContents}</span></>}</p>
+          <p class="rate" data-role="rate">Ask for today’s rate</p><p class="availability" data-role="availability" hidden>Confirm with shop</p>
           <button type="button" class="add" data-action="increase" aria-label={'Add '+p.name}><Plus size={18} aria-hidden="true"/> Add</button>
           <div class="stepper" hidden>
             <button type="button" data-action="decrease" aria-label={'Reduce '+p.name}><Minus size={18} aria-hidden="true"/></button>
@@ -34,10 +41,16 @@ function unitHint(p:Product){
         </div>
       </article>;
     })}
+      </div>
+    </section>)}
   </div>
   <p class="no-results" data-role="no-results" hidden></p>
+  <details class="quantity-guide">
+    <summary><Scale size={18} aria-hidden="true"/><span>Choosing quantities &amp; cuts</span><ChevronRight className="guide-chevron" size={18} aria-hidden="true"/></summary>
+    <div class="guide-copy"><p>Choose by weight, piece or set as shown. These are requested quantities; the shop confirms the actual weight and charging unit.</p><p>Add your preparation preference in the review. The shop confirms whether it can provide the cut.</p></div>
+  </details>
   <div class="basket-bar" data-role="basket" hidden>
-    <ShoppingBasket size={22} aria-hidden="true"/><span role="status" aria-live="polite" data-role="count"></span><button type="button" data-action="open">Review request</button>
+    <ShoppingBasket size={22} aria-hidden="true"/><span class="basket-text"><strong role="status" aria-live="polite" data-role="count"></strong><small>Selected cuts</small></span><button type="button" data-action="open">Review request <ChevronRight size={16} aria-hidden="true"/></button>
   </div>
   <dialog class="sheet" aria-labelledby="sheet-title">
     <div class="sheet-head"><h2 id="sheet-title">Your request</h2><button type="button" class="icon-btn" aria-label="Close" data-action="close"><X size={22} aria-hidden="true"/></button></div>
@@ -52,6 +65,7 @@ function unitHint(p:Product){
       <details class="note"><summary>Add a note (optional)</summary><label class="field"><span class="sr-only">Order note</span><textarea data-role="order-note" dir="auto" maxlength={MAX_ORDER_NOTE}></textarea></label></details>
       <p class="qualify">No payment here. Rates, availability and final weight are confirmed by the shop.</p>
       <p class="rate" data-role="estimate" hidden></p>
+      <div class="review-stage" data-stage="review"><Check size={18} aria-hidden="true" className="ready-check"/><strong data-role="review-state">Review your selection</strong></div>
       <p class="qualify" role="status" data-role="review-notice" hidden></p>
       <a data-action="handoff" class="btn-primary whatsapp" target="_blank" rel="noopener noreferrer" hidden><MessageCircle size={20} aria-hidden="true"/> <span data-role="handoff-label"></span></a>
       <p data-role="long-link" tabindex="-1" class="qualify" role="alert" hidden>This request is too long for a WhatsApp link. Copy the unpriced request or call the shop.</p>

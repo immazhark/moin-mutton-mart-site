@@ -115,6 +115,9 @@ export function mountCounter(root:HTMLElement){
       if(match)visible++;
     }
     for(const el of root.querySelectorAll<HTMLButtonElement>('[data-category-filter]'))el.setAttribute('aria-pressed',String(el.dataset.categoryFilter===category));
+    for(const group of grid.querySelectorAll<HTMLElement>('[data-group]')){
+      show(group,!!group.querySelector('.product-card:not([hidden])'));
+    }
     show(grid,visible>0);show(none,visible===0);
     text(none,'Nothing in the range matches “'+search.value+'”. Try another word or call the shop.');
   }
@@ -137,7 +140,11 @@ export function mountCounter(root:HTMLElement){
       const offer=catalogue?.offers[p.id];
       const restricted=next?.kind==='blocked';
       text(role(card,'rate'),rate?.kind==='visible'&&p.pricingBasis?currency.format(rate.pricePaise/100)+' / '+p.pricingBasis:'Ask for today’s rate');
-      text(role(card,'availability'),!catalogue?(restricted?'Previously restricted · check with shop':'Confirm with shop'):!catalogue.acceptingRequests?'Requests paused':!offer?.enabled?'Not listed today':offer.availability==='sold_out'||offer.stockQuantity===0?'Sold out':offer.availability==='ask'||offer.stockQuantity===null?'Confirm availability':restricted?'Quantity limit':'Available');
+      const availabilityNode=role(card,'availability');
+      text(availabilityNode,!catalogue?(restricted?'Previously restricted · check with shop':'Confirm with shop'):!catalogue.acceptingRequests?'Requests paused':!offer?.enabled?'Not listed today':offer.availability==='sold_out'||offer.stockQuantity===0?'Sold out':offer.availability==='ask'||offer.stockQuantity===null?'Confirm availability':restricted?'Quantity limit':'Available');
+      show(availabilityNode,!!catalogue||!!restricted);
+      card.dataset.selected=String(q>0);
+      card.dataset.restricted=String(!!restricted);
       add.disabled=!canIncrease(p,0);
       show(add,q===0);show(stepper,q>0);
       if(q>0)renderStepper(stepper,p,q);
@@ -219,6 +226,10 @@ export function mountCounter(root:HTMLElement){
       text(role(handoff,'handoff-label'),live.kind==='ready'?'Continue on WhatsApp':'Continue as unpriced enquiry');
     }else handoff.removeAttribute('href');
     show(handoff,link);show(longLink,oversized);show(check,!valid);
+    const stage=role(dialog,'review-state');
+    const stageContainer=stage.parentElement;
+    if(stageContainer)stageContainer.dataset.stage=link?'ready':checking?'checking':'review';
+    text(stage,link?'Ready to enquire':checking?'Checking your selection…':'Review your selection');
     check.setAttribute('aria-disabled',String(checking));
     text(role(check,'check-label'),checking?'Checking latest information…':'Check latest rates & availability');
     if(dialog.open&&[handoff,longLink,check].some(el=>el===active&&el.hidden))(link?handoff:oversized?longLink:check).focus();
