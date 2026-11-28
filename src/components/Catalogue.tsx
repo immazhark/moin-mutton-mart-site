@@ -153,7 +153,7 @@ export default function Catalogue() {
   const count = items.length;
 
   return (
-    <section id="catalogue" className="catalogue" aria-labelledby="shop-title">
+    <section id="catalogue" tabIndex={-1} className="catalogue" aria-labelledby="shop-title">
       <div className="shop-head">
         <h1 id="shop-title">Choose your cuts</h1>
         <p className="status" role="status">{live.kind === 'loading' ? 'Checking current availability…' : live.kind === 'unavailable' ? 'Live rates unavailable · ask the shop' : current?.acceptingRequests ? 'Current rates and stock · subject to confirmation' : 'The shop is not taking requests right now'}</p>
@@ -162,7 +162,7 @@ export default function Catalogue() {
       <label className="search">
         <Search size={18} aria-hidden="true" />
         <span className="sr-only">Search the range</span>
-        <input ref={searchInput} type="search" placeholder="Search the range" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input ref={searchInput} dir="auto" type="search" placeholder="Search the range" value={query} onChange={(e) => setQuery(e.target.value)} />
       </label>
 
       <div className="categories" role="group" aria-label="Categories">
@@ -195,7 +195,7 @@ export default function Catalogue() {
       {count > 0 && (
         <div className="basket-bar">
           <ShoppingBasket size={22} aria-hidden="true" />
-          <span>
+          <span role="status" aria-live="polite">
             {count} {count === 1 ? 'item' : 'items'}
           </span>
           <button ref={opener} type="button" onClick={openSheet}>

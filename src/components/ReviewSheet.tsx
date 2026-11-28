@@ -1,5 +1,5 @@
 import { Check, Copy, MessageCircle, Phone, Trash2, X } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { CopySession } from '../lib/order/copy-session';
 import {
   MAX_LINE_NOTE,
@@ -50,6 +50,26 @@ export default function ReviewSheet({ dialogRef, products, items, live, known, r
   const busy=useRef(false);
   const currentMessage=useRef(message);
   const messageRevision=useRef(0);
+  const actionNode=useRef<HTMLElement|null>(null);
+  const restoreAction=useRef(false);
+  const actionRef=useCallback((node:HTMLElement|null)=>{
+    if(!node){restoreAction.current=actionNode.current===document.activeElement;actionNode.current=null;return;}
+    actionNode.current=node;
+    if(restoreAction.current&&dialogRef.current?.open){restoreAction.current=false;node.focus();}
+  },[dialogRef]);
+  const removalFocus=useRef(false);
+  function remove(id:string){removalFocus.current=true;onRemove(id);}
+  function changeQuantity(id:string,delta:-1|1){
+    if(delta<0&&items.find(item=>item.productId===id)?.quantity===products.find(p=>p.id===id)?.step)removalFocus.current=true;
+    onChange(id,delta);
+  }
+  useLayoutEffect(()=>{
+    if(!removalFocus.current)return;
+    removalFocus.current=false;
+    const sheet=dialogRef.current;
+    if(!sheet?.open)return;
+    (sheet.querySelector<HTMLButtonElement>('.empty button')??sheet.querySelector<HTMLButtonElement>('.line .link-btn')??sheet.querySelector<HTMLButtonElement>('.icon-btn'))?.focus();
+  },[items,dialogRef]);
   const current=live.kind==='ready'?live.catalogue:null;
   const selectionState=known?reviewChanges(known,known,products,items):null;
   const blocked=selectionState?.kind==='blocked';
@@ -140,11 +160,11 @@ export default function ReviewSheet({ dialogRef, products, items, live, known, r
                 <li key={p.id} className="line">
                   <div className="line-top">
                     <h3>{p.name}</h3>
-                    <button type="button" className="link-btn" aria-label={`Remove ${p.name}`} onClick={() => onRemove(p.id)}>
+                    <button type="button" className="link-btn" aria-label={`Remove ${p.name}`} onClick={() => remove(p.id)}>
                       <Trash2 size={16} aria-hidden="true" /> Remove
                     </button>
                   </div>
-                  <Stepper product={p} quantity={s.quantity} canIncrease={next?.kind!=='blocked'} onChange={(d) => onChange(p.id, d)} />
+                  <Stepper product={p} quantity={s.quantity} canIncrease={next?.kind!=='blocked'} onChange={(d) => changeQuantity(p.id, d)} />
                   {rate?.kind==='visible'&&p.pricingBasis&&<p className="unit-hint">{new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(rate.pricePaise/100)} / {p.pricingBasis}</p>}
                   {assessment?.kind==='blocked'&&<p className="qualify" role="alert">{!current?'Previously restricted. Check again, reduce or remove this item, or call the shop.':assessment.reason==='insufficient_stock'?'Requested quantity exceeds current stock. Reduce or remove this item.':'Not currently requestable. Check again, remove this item or contact the shop.'}</p>}
                   {chips.length > 0 && (
@@ -167,7 +187,7 @@ export default function ReviewSheet({ dialogRef, products, items, live, known, r
                   {showOther && (
                     <label className="field">
                       <span>{chips.length ? 'Other preference' : 'Cut or preparation (optional)'}</span>
-                      <input maxLength={MAX_LINE_NOTE} value={s.note} onChange={(e) => onNote(p.id, e.target.value)} />
+                      <input dir="auto" maxLength={MAX_LINE_NOTE} value={s.note} onChange={(e) => onNote(p.id, e.target.value)} />
                     </label>
                   )}
                 </li>
@@ -190,7 +210,7 @@ export default function ReviewSheet({ dialogRef, products, items, live, known, r
             <summary>Add a note (optional)</summary>
             <label className="field">
               <span className="sr-only">Order note</span>
-              <textarea maxLength={MAX_ORDER_NOTE} value={orderNote} onChange={(e) => setOrderNote(e.target.value)} />
+              <textarea dir="auto" maxLength={MAX_ORDER_NOTE} value={orderNote} onChange={(e) => setOrderNote(e.target.value)} />
             </label>
           </details>
 
@@ -201,14 +221,14 @@ export default function ReviewSheet({ dialogRef, products, items, live, known, r
           {estimate.kind==='complete'&&!blocked&&<p className="rate">Estimated total: {new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(estimate.totalPaise/100)}</p>}
           {reviewNotice?.key===message&&<p className="qualify" role="status">{reviewNotice.text}</p>}
           {canLink && validGrant ? (
-            <a className="btn-primary whatsapp" href={buildWhatsAppUrl(validGrant.message)} target="_blank" rel="noopener noreferrer"
+            <a ref={actionRef} className="btn-primary whatsapp" href={buildWhatsAppUrl(validGrant.message)} target="_blank" rel="noopener noreferrer"
               onClick={event=>{if(Date.now()-validGrant.at>15000||Date.now()<validGrant.at){event.preventDefault();void checkLatest();}}}>
               <MessageCircle size={20} aria-hidden="true" /> {validGrant.snapshot.kind==='ready'?'Continue on WhatsApp':'Continue as unpriced enquiry'}
             </a>
           ) : validGrant ? (
-            <p className="qualify" role="alert">This request is too long for a WhatsApp link. Copy the unpriced request or call the shop.</p>
+            <p ref={actionRef} tabIndex={-1} className="qualify" role="alert">This request is too long for a WhatsApp link. Copy the unpriced request or call the shop.</p>
           ) : (
-            <button type="button" className="btn-primary whatsapp" disabled={checking} onClick={()=>void checkLatest()}>
+            <button ref={actionRef} type="button" className="btn-primary whatsapp" aria-disabled={checking} onClick={()=>void checkLatest()}>
               <MessageCircle size={20} aria-hidden="true"/> {checking?'Checking latest information…':'Check latest rates & availability'}
             </button>
           )}
@@ -228,7 +248,7 @@ export default function ReviewSheet({ dialogRef, products, items, live, known, r
             {!blocked && copyState === 'done' && 'Copied. Paste it into your chat with the shop.'}
             {!blocked && copyState === 'failed' && 'Copy is unavailable here. Select the text below instead.'}
           </p>
-          {!blocked && copyState === 'failed' && <textarea className="copy-fallback" aria-label="Request text" readOnly value={message} />}
+          {!blocked && copyState === 'failed' && <textarea dir="auto" className="copy-fallback" aria-label="Request text" readOnly value={message} />}
         </>
       )}
     </dialog>

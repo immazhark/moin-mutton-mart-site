@@ -14,7 +14,7 @@ export default function Stepper({ product, quantity, onChange, canIncrease = tru
       <button type="button" aria-label={`Reduce ${product.name}`} onClick={() => onChange(-1)}>
         <Minus size={18} aria-hidden="true" />
       </button>
-      <output aria-live="polite">{formatQuantity(product, quantity)}</output>
+      <output aria-label={`${product.name} quantity`} aria-live="polite">{formatQuantity(product, quantity)}</output>
       <button
         type="button"
         aria-label={`Increase ${product.name}`}
