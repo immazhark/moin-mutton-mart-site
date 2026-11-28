@@ -6,7 +6,7 @@ export {validatePublicConfig,type PublicConfig} from './firebase-public';
 export interface FirebaseServices {auth:Auth;db:Firestore}
 let services:FirebaseServices|undefined;
 export function getFirebaseServices():FirebaseServices|null {
-  const app=getFirebaseApp();
+  const app=getFirebaseApp('owner');
   if(!app)return null;
   if(services)return services;
   services={auth:initializeAuth(app,{persistence:browserSessionPersistence,popupRedirectResolver:browserPopupRedirectResolver}),db:getFirestore(app)};

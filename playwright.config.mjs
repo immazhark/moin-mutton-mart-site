@@ -11,7 +11,7 @@ export default defineConfig({
   testDir: 'tests/e2e',
   use: { baseURL, launchOptions: { args: ['--no-sandbox'] } },
   webServer: {
-    command: `npm run build && python3 -m http.server ${port} --bind 127.0.0.1 --directory dist`,
+    command: `npm run build && python3 tests/support/serve-preview.py ${port} dist`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,

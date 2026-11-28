@@ -160,7 +160,9 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
   async function leave(){
     if(busy.current||memberCheck.current)return;
     if((dirty||unresolved)&&!window.confirm('Sign out and discard this local draft? If a save was uncertain, its outcome may still need checking.'))return;
-    try{await signOut(services.auth);}catch{setError('Sign-out failed. Try again.');}
+    busy.current=true;setChecking(true);
+    try{await signOut(services.auth);}catch{if(isCurrent())setError('Sign-out failed. Try again.');}
+    finally{busy.current=false;if(isCurrent())setChecking(false);}
   }
   const controlsDisabled=operationBusy||saveState!=='idle'||load!=='ready';
   return <section className="owner-console">

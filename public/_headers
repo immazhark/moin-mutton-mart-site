@@ -1,0 +1,21 @@
+# Static Cloudflare Pages response headers. CSP is intentionally report-only.
+# No remote collector: inspect browser console/events on the isolated preview first.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  X-Robots-Tag: noindex, nofollow
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com; style-src 'self'; img-src 'self' data: https://*.googleusercontent.com; font-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; object-src 'none'; base-uri 'none'; form-action 'self'
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/privacy
+  Cache-Control: public, max-age=0, must-revalidate
+/privacy/*
+  Cache-Control: public, max-age=0, must-revalidate
+/admin
+  Cache-Control: no-store
+/admin/*
+  Cache-Control: no-store
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
