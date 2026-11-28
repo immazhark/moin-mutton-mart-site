@@ -21,6 +21,16 @@ test('preview headers protect documents, preserve cache separation and keep CSP 
   await page.getByRole('button',{name:'Add Mutton with bone',exact:true}).click();
   await page.getByRole('button',{name:'Review request'}).click();
   await expect(page.getByRole('dialog')).toBeVisible();
+  await page.evaluate(()=>{
+    document.addEventListener('securitypolicyviolation',event=>{
+      if(event.disposition==='report'&&event.effectiveDirective.startsWith('script-src'))document.documentElement.dataset.qaCspReport='yes';
+    });
+    const script=document.createElement('script');
+    script.textContent="document.documentElement.dataset.qaCspRan='yes'";
+    document.head.append(script);
+  });
+  await expect(page.locator('html')).toHaveAttribute('data-qa-csp-ran','yes');
+  await expect(page.locator('html')).toHaveAttribute('data-qa-csp-report','yes');
   const script=await page.locator('script[src*="/_astro/"],astro-island[component-url]').first().evaluate(el=>el.getAttribute('src')??el.getAttribute('component-url'));
   expect(script).toBeTruthy();
   const asset=await request.get(script!);
