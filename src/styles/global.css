@@ -481,3 +481,8 @@ main { max-width: 1120px; margin: 0 auto; }
 @media(min-width:640px){.market-hero{min-height:212px;margin-bottom:14px}.market-hero-copy{padding:20px 35px}.market-headline{font-size:clamp(2.65rem,4.1vw,3.4rem);margin-bottom:7px}.market-intro{margin-bottom:8px}.market-hero-photo{margin-block:13px}.storefront .categories button{min-height:64px}.category-visual{height:46px}.counter-chapter{min-height:72px;padding-block:8px}.storefront .counter-chapter .group-title{font-size:1.75rem}.chapter-mark{width:74px;flex-basis:74px}.counter-group{padding:9px}.storefront .product-body{padding:11px}}
 @media(min-width:640px) and (max-width:900px){.market-hero-copy{padding:17px 22px}.market-headline{font-size:2.55rem}.storefront .categories button{gap:6px;padding-inline:7px}.category-visual{width:42px;flex-basis:42px}.category-label{font-size:.8rem}}
 @media(forced-colors:active){.counter-chapter::after{display:none}}
+
+/* Respect user text scaling: rem-based intrinsic columns rather than fixed tile counts. */
+@media(max-width:639px){.storefront .categories{grid-template-columns:repeat(auto-fit,minmax(min(100%,4rem),1fr))}.category-label{max-width:100%;overflow-wrap:anywhere}.storefront .product-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,10.25rem),1fr))}.storefront .product-card:last-child:nth-child(odd){grid-column:1/-1}}
+@media(max-width:375px){.storefront .product-grid{grid-template-columns:minmax(0,1fr)}}
+.market-cta{max-width:100%;flex-wrap:wrap;white-space:normal;overflow-wrap:anywhere}.market-hero-copy,.chapter-copy,.product-body,.category-visual,.market-banner>div{min-width:0}.storefront .category-label{min-width:0}
