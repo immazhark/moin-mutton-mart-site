@@ -9,8 +9,8 @@ qa="$(mktemp -d)"
 trap 'rm -rf -- "$qa"' EXIT
 cp -R "$root/src" "$root/public" "$root/astro.config.mjs" "$root/tsconfig.json" "$root/package.json" "$qa/"
 ln -s "$root/node_modules" "$qa/node_modules"
-cp "$root/tests/browser-emulator/CatalogueHarness.tsx" "$qa/src/components/CatalogueHarness.tsx"
-# These synthetic, explicitly approved-for-testing charging units exist only in the disposable build.
+cp "$root/tests/browser-emulator/CatalogueHarness.tsx.template" "$qa/src/components/CatalogueHarness.tsx"
+# These synthetic, test-only charging units exist only in the disposable build.
 # Never rewrite the real product metadata or publish this build.
 node --input-type=module - "$qa" <<'NODE'
 import {readFileSync,writeFileSync} from 'node:fs';
