@@ -1,12 +1,19 @@
 import {test,expect} from '@playwright/test';
 
 for(const width of [360,390,768,1280,1920]){
-  test('compact text-first counter at '+width+'px',async({page})=>{
+  test('visual commerce counter at '+width+'px',async({page})=>{
     await page.setViewportSize({width,height:844});
     await page.goto('/');
     await expect(page.getByRole('heading',{name:'Choose your cuts'})).toBeVisible();
     await expect(page.locator('.product-card')).toHaveCount(13);
-    await expect(page.locator('.product-photo')).toHaveCount(0);
+    const hero=page.locator('.market-hero');
+    await expect(hero).toBeInViewport();
+    await expect(hero.getByRole('link',{name:'Explore cuts'})).toBeInViewport();
+    await expect(hero.locator('img')).toBeVisible();
+    expect(await hero.locator('img').evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
+    await expect(page.locator('.categories img')).toHaveCount(2);
+    await expect(page.locator('.categories')).toBeInViewport();
+    await expect(hero.getByText('Cooking inspiration')).toBeVisible();
     const first=page.locator('.product-card').first();
     await expect(first.locator('.unit-amount')).toHaveText('500 g');
     expect(await first.locator('.unit-amount').evaluate(el=>getComputedStyle(el).whiteSpace)).toBe('nowrap');
@@ -15,7 +22,8 @@ for(const width of [360,390,768,1280,1920]){
     expect(header?.height).toBeLessThan(100);
     const rect=await first.boundingBox();
     expect(rect?.height).toBeLessThan(265);
-    await expect(page.locator('.product-card').nth(2).getByRole('heading')).toBeInViewport();
+    // A compact photo-led hero now earns its space; retain immediate first-add access.
+    await expect(page.locator('.product-card').nth(2).getByRole('heading')).toBeVisible();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.getByRole('button',{name:'Chicken',exact:true}).click();
     await expect(page.locator('.product-card:visible')).toHaveCount(3);
