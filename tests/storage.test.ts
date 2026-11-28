@@ -26,3 +26,17 @@ describe('basket persistence', () => {
     ]) expect(decodeDraft(raw, products, 2000)).toBeNull();
   });
 });
+
+describe('strict local draft boundary',()=>{
+  it('rejects unnecessary or injected fields rather than retaining a contaminated draft',()=>{
+    const valid=JSON.parse(encodeDraft(items,1000));
+    for(const input of [
+      {...valid,phone:'fixture'},
+      {...valid,items:[{...valid.items[0],note:'private'}]},
+      {...valid,items:[{...valid.items[0],price:100}]},
+      {...valid,startedAt:-1},
+      {...valid,items:[null]},
+    ])expect(decodeDraft(JSON.stringify(input),products,1001)).toBeNull();
+    expect(decodeDraft(JSON.stringify(valid),products,NaN)).toBeNull();
+  });
+});
