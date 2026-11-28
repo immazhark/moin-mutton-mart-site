@@ -1,5 +1,5 @@
 import { Check, Copy, MessageCircle, Phone, Trash2, X } from 'lucide-react';
-import { useLayoutEffect, useState, useSyncExternalStore, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { CopySession } from '../lib/order/copy-session';
 import {
   MAX_LINE_NOTE,
@@ -12,6 +12,8 @@ import {
   type Selection,
 } from '../lib/order/order';
 import Stepper from './Stepper';
+import {reviewChanges,requestEstimate,type CatalogueSnapshot} from '../lib/catalogue/freshness';
+import {assessQuantity,displayedRate} from '../lib/catalogue/contract';
 
 const FULFILMENT_OPTIONS: { value: Fulfilment; label: string }[] = [
   { value: 'pickup', label: 'Pickup' },
@@ -23,6 +25,8 @@ interface Props {
   dialogRef: RefObject<HTMLDialogElement | null>;
   products: readonly Product[];
   items: Selection[];
+  live: CatalogueSnapshot;
+  refresh: () => Promise<CatalogueSnapshot>;
   onChange: (id: string, delta: -1 | 1) => void;
   onRemove: (id: string) => void;
   onNote: (id: string, note: string) => void;
@@ -30,7 +34,7 @@ interface Props {
   onRequestClose: () => void;
 }
 
-export default function ReviewSheet({ dialogRef, products, items, onChange, onRemove, onNote, onClose, onRequestClose }: Props) {
+export default function ReviewSheet({ dialogRef, products, items, live, refresh, onChange, onRemove, onNote, onClose, onRequestClose }: Props) {
   const [fulfilment, setFulfilment] = useState<Fulfilment>('discuss');
   const [orderNote, setOrderNote] = useState('');
   const [copySession] = useState(() => new CopySession());
@@ -38,12 +42,66 @@ export default function ReviewSheet({ dialogRef, products, items, onChange, onRe
   const [otherOpen, setOtherOpen] = useState<Set<string>>(new Set());
 
   const message = items.length ? formatRequest(products, items, fulfilment, orderNote) : '';
-  const canLink = message !== '' && linkFits(message);
+  const [checking,setChecking]=useState(false);
+  const [reviewNotice,setReviewNotice]=useState<{key:string;text:string}|null>(null);
+  const [grant,setGrant]=useState<{key:string;snapshot:CatalogueSnapshot;at:number;message:string}|null>(null);
+  const busy=useRef(false);
+  const currentMessage=useRef(message);
+  const messageRevision=useRef(0);
+  const current=live.kind==='ready'?live.catalogue:null;
+  const selectionState=current?reviewChanges(current,current,products,items):null;
+  const blocked=selectionState?.kind==='blocked';
+  const validGrant=grant&&grant.key===message&&grant.snapshot===live&&!blocked?grant:null;
+  const canLink=validGrant!==null&&linkFits(validGrant.message);
+  const estimate=requestEstimate(current,products,items);
+  useLayoutEffect(()=>{
+    if(currentMessage.current===message)return;
+    currentMessage.current=message;
+    messageRevision.current++;
+    setGrant(null);
+    setReviewNotice(null);
+  },[message]);
+  useEffect(()=>{
+    if(!grant)return;
+    const expiry=window.setTimeout(()=>setGrant(previous=>previous===grant?null:previous),Math.max(0,15000-(Date.now()-grant.at)));
+    return ()=>window.clearTimeout(expiry);
+  },[grant]);
+
+  async function checkLatest(){
+    if(busy.current||!message)return;
+    busy.current=true;setChecking(true);setGrant(null);setReviewNotice(null);
+    const key=message;
+    const revision=messageRevision.current;
+    try{
+      const next=await refresh();
+      if(currentMessage.current!==key||messageRevision.current!==revision||!dialogRef.current?.open)return;
+      if(next.kind!=='ready'){
+        setGrant({key,snapshot:next,at:Date.now(),message:key});
+        setReviewNotice({key,text:'Live rates and availability could not be checked. You can send an unpriced enquiry and ask the shop to confirm.'});
+        return;
+      }
+      const decision=reviewChanges(current,next.catalogue,products,items);
+      if(decision.kind==='blocked'){
+        setReviewNotice({key,text:'Some selections are not currently requestable. Change or remove the affected items before continuing.'});
+        return;
+      }
+      if(decision.kind==='review'){
+        const names=decision.changes.map(id=>products.find(p=>p.id===id)?.name??id);
+        setReviewNotice({key,text:'Please review the current rates and availability for: '+names.join(', ')+'. Check again when ready.'});
+        return;
+      }
+      const freshMessage=formatRequest(products,items,fulfilment,orderNote,requestEstimate(next.catalogue,products,items));
+      setGrant({key,snapshot:next,at:Date.now(),message:freshMessage});
+      setReviewNotice({key,text:'Current information checked. Final availability, weight and total are confirmed by the shop.'});
+    }catch{
+      if(currentMessage.current===key&&messageRevision.current===revision)setReviewNotice({key,text:'Could not verify this request. Try again or call the shop.'});
+    }finally{busy.current=false;setChecking(false);}
+  }
 
   useLayoutEffect(() => { copySession.setMessage(message); }, [copySession, message]);
 
   function copy() {
-    void copySession.copy((text) => navigator.clipboard.writeText(text));
+    if(!blocked)void copySession.copy((text) => navigator.clipboard.writeText(text));
   }
 
   return (
@@ -67,6 +125,9 @@ export default function ReviewSheet({ dialogRef, products, items, onChange, onRe
           <ul className="lines">
             {items.map((s) => {
               const p = products.find((x) => x.id === s.productId)!;
+              const assessment=current?assessQuantity(current,p,s.quantity):null;
+              const next=current?assessQuantity(current,p,s.quantity+p.step):null;
+              const rate=current&&p.pricingBasis?displayedRate(current,p.id):null;
               const chips = p.cuts ?? [];
               const showOther = chips.length === 0 || otherOpen.has(p.id) || (s.note !== '' && !chips.includes(s.note));
               return (
@@ -77,7 +138,9 @@ export default function ReviewSheet({ dialogRef, products, items, onChange, onRe
                       <Trash2 size={16} aria-hidden="true" /> Remove
                     </button>
                   </div>
-                  <Stepper product={p} quantity={s.quantity} onChange={(d) => onChange(p.id, d)} />
+                  <Stepper product={p} quantity={s.quantity} canIncrease={next?.kind!=='blocked'} onChange={(d) => onChange(p.id, d)} />
+                  {rate?.kind==='visible'&&p.pricingBasis&&<p className="unit-hint">{new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(rate.pricePaise/100)} / {p.pricingBasis}</p>}
+                  {assessment?.kind==='blocked'&&<p className="qualify" role="alert">{assessment.reason==='insufficient_stock'?'Requested quantity exceeds current stock. Reduce or remove this item.':'Not currently requestable. Remove this item or contact the shop.'}</p>}
                   {chips.length > 0 && (
                     <div className="chips" role="group" aria-label={`Cut for ${p.name}`}>
                       {chips.map((c) => (
@@ -129,25 +192,31 @@ export default function ReviewSheet({ dialogRef, products, items, onChange, onRe
             No payment here. Rates, availability and final weight are confirmed by the shop.
           </p>
 
-          {canLink ? (
-            <a className="btn-primary whatsapp" href={buildWhatsAppUrl(message)} target="_blank" rel="noopener noreferrer">
-              <MessageCircle size={20} aria-hidden="true" /> Continue on WhatsApp
+          {estimate.kind==='complete'&&!blocked&&<p className="rate">Estimated total: {new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(estimate.totalPaise/100)}</p>}
+          {reviewNotice?.key===message&&<p className="qualify" role="status">{reviewNotice.text}</p>}
+          {canLink && validGrant ? (
+            <a className="btn-primary whatsapp" href={buildWhatsAppUrl(validGrant.message)} target="_blank" rel="noopener noreferrer"
+              onClick={event=>{if(Date.now()-validGrant.at>15000||Date.now()<validGrant.at){event.preventDefault();void checkLatest();}}}>
+              <MessageCircle size={20} aria-hidden="true" /> {validGrant.snapshot.kind==='ready'?'Continue on WhatsApp':'Continue as unpriced enquiry'}
             </a>
+          ) : validGrant ? (
+            <p className="qualify" role="alert">This request is too long for a WhatsApp link. Copy the unpriced request or call the shop.</p>
           ) : (
-            <p className="qualify" role="alert">
-              This request is too long for a WhatsApp link. Copy it and paste it into WhatsApp, or call the shop.
-            </p>
+            <button type="button" className="btn-primary whatsapp" disabled={checking||blocked} onClick={()=>void checkLatest()}>
+              <MessageCircle size={20} aria-hidden="true"/> {checking?'Checking latest information…':'Check latest rates & availability'}
+            </button>
           )}
           <p className="destination">Opens a chat with +91 81437 30054. You send the message yourself.</p>
 
           <div className="fallbacks">
-            <button type="button" className="btn-secondary" onClick={copy} disabled={copying}>
+            <button type="button" className="btn-secondary" onClick={copy} disabled={copying||blocked}>
               {copyState === 'done' ? <Check size={18} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />} {copying ? 'Copying…' : 'Copy request'}
             </button>
             <a className="btn-secondary" href="tel:+918143730054">
               <Phone size={18} aria-hidden="true" /> Call instead
             </a>
           </div>
+          <p className="destination">Copy request always copies an unpriced enquiry, not an estimate.</p>
           <p role="status" aria-label="Clipboard status" className="copy-status">
             {copying && 'Copy in progress. If you edit the request, copy it again when ready.'}
             {copyState === 'done' && 'Copied. Paste it into your chat with the shop.'}
