@@ -24,9 +24,19 @@ test.afterAll(async()=>{await env?.cleanup();});
 test('configured catalogue reviews changed rates, preserves blocked stock through outage, and recovers',async({page})=>{
   // Browser cannot contact any external service; never send the WhatsApp message.
   const external:string[]=[];
+  let offline=false;
+  let publicReads=0;
   await page.route('**/*',route=>{
     const url=new URL(route.request().url());
-    if(url.hostname==='127.0.0.1'&&['4322','8088'].includes(url.port))return route.continue();
+    if(url.hostname==='127.0.0.1'&&url.port==='8088'){
+      publicReads++;
+      expect(route.request().method()).toBe('GET');
+      expect(url.pathname).toBe('/v1/projects/demo-moin-security/databases/(default)/documents/public/catalogue');
+      expect(route.request().headers().authorization).toBeUndefined();
+      if(offline)return route.abort();
+      return route.continue();
+    }
+    if(url.hostname==='127.0.0.1'&&url.port==='4322')return route.continue();
     external.push(url.origin);return route.abort();
   });
   await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:()=>Promise.reject(Error('Synthetic clipboard denial'))}}));
@@ -69,28 +79,31 @@ test('configured catalogue reviews changed rates, preserves blocked stock throug
   await expect(sheet.getByRole('button',{name:'Copy request'})).toBeDisabled();
   await expect(sheet.getByRole('textbox',{name:'Request text'})).toHaveCount(0);
   await expect(sheet.getByRole('button',{name:'Increase Mutton with bone'})).toBeDisabled();
-  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('qa-emulator-network',{detail:'offline'})));
-  await expect(page.locator('html')).toHaveAttribute('data-qa-network','offline');
+  offline=true;
   await check.click();
   await expect(sheet.getByText('Previously restricted selections could not be rechecked.',{exact:false})).toBeVisible();
   await expect(fallback).toHaveCount(0);
   await expect(sheet.getByRole('button',{name:'Copy request'})).toBeDisabled();
 
   await seed(4,120000);
-  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('qa-emulator-network',{detail:'online'})));
-  await expect(page.locator('html')).toHaveAttribute('data-qa-network','online');
+  offline=false;
   await check.click();
   await expect(sheet.getByText('Please review the current rates and availability for: Mutton with bone.')).toBeVisible();
   await check.click();
   await expect(continueLink).toBeVisible();
 
   await sheet.getByLabel('Cut or preparation (optional)').fill('Curry pieces');
-  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('qa-emulator-network',{detail:'offline'})));
-  await expect(page.locator('html')).toHaveAttribute('data-qa-network','offline');
+  offline=true;
   await check.click();
   await expect(fallback).toBeVisible();
   const unpriced=new URL((await fallback.getAttribute('href'))!).searchParams.get('text')??'';
   expect(unpriced).not.toContain('Andaza:');
   expect(unpriced).toContain('Rate aur total confirm kar dijiye.');
+  expect(publicReads).toBeGreaterThanOrEqual(6);
   expect(external).toEqual([]);
+  // Real REST boundary (no auth headers): known GET is permitted, listing and membership are not.
+  const base='http://127.0.0.1:8088/v1/projects/demo-moin-security/databases/(default)/documents';
+  expect((await page.request.get(base+'/public/catalogue')).ok()).toBe(true);
+  expect((await page.request.get(base+'/public')).status()).toBe(403);
+  expect((await page.request.get(base+'/admins/owner')).status()).toBe(403);
 });

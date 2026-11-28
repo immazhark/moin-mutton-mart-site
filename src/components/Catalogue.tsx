@@ -11,11 +11,8 @@ import ReviewSheet from './ReviewSheet';
 export default function Catalogue() {
   const [session] = useState(() => new CatalogueSession(async () => {
     if(!import.meta.env.PUBLIC_FIREBASE_PROJECT_ID)throw Error('Live catalogue is not configured');
-    const {getPublicFirestore} = await import('../lib/catalogue/firebase-public');
-    const db=getPublicFirestore();
-    if(!db)throw Error('Live catalogue is not configured');
-    const {getCatalogueFromServer}=await import('../lib/catalogue/firestore');
-    return getCatalogueFromServer(db,products);
+    const {loadPublicCatalogue}=await import('../lib/catalogue/public-read');
+    return loadPublicCatalogue(products);
   }));
   const live = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const current = live.kind === 'ready' ? live.catalogue : null;

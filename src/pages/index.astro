@@ -1,6 +1,8 @@
 ---
 import { MapPin, Phone, MessageCircle } from 'lucide-react';
 import Catalogue from '../components/Catalogue';
+import {Image} from 'astro:assets';
+import logo from '../assets/logo.png';
 import '../styles/global.css';
 ---
 <!doctype html>
@@ -17,7 +19,7 @@ import '../styles/global.css';
     <a class="skip" href="#catalogue">Skip to the range</a>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Moin Mutton Mart home">
-        <img src="/images/logo.png" width="40" height="50" alt="" />
+        <Image src={logo} width={40} densities={[1,2,3]} format="webp" quality={90} loading="eager" decoding="async" alt="" />
         <span class="brand-text">
           <strong>Moin Mutton Mart</strong>
           <small><MapPin size={13} aria-hidden="true" /> Mallepally, Hyderabad</small>
