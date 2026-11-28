@@ -55,3 +55,31 @@ describe('live catalogue freshness',()=>{
    expect(reviewChanges(previous,next,approved,items)).toEqual({kind:'ready',changes:[]});
  });
 });
+
+describe('known availability survives failed refresh without stale pricing',()=>{
+  it('retains last-known negative constraints during loading and outage, but never offers stale estimates',async()=>{
+    const closed=fixture();closed.acceptingRequests=false;
+    const gate=deferred<ReturnType<typeof fixture>>();let call=0;
+    const session=new CatalogueSession(()=>++call===1?Promise.resolve(closed):gate.promise);
+    await session.refresh();
+    expect(session.getLastKnownCatalogue()?.acceptingRequests).toBe(false);
+    const refresh=session.refresh();
+    expect(session.getSnapshot()).toEqual({kind:'loading'});
+    expect(session.getLastKnownCatalogue()?.acceptingRequests).toBe(false);
+    gate.reject(Error('offline'));await refresh;
+    expect(session.getSnapshot()).toEqual({kind:'unavailable'});
+    expect(reviewChanges(null,session.getLastKnownCatalogue()!,approved,items).kind).toBe('blocked');
+    expect(requestEstimate(null,approved,items)).toEqual({kind:'confirmation_required'});
+  });
+  it('clears a known blocked selection only after a successful new read',async()=>{
+    const soldOut=fixture();soldOut.offers['mutton-bone'].availability='sold_out';
+    const open=fixture();open.revision=2;let call=0;
+    const session=new CatalogueSession(async()=>{call++;if(call===2)throw Error('offline');return call===1?soldOut:open;});
+    expect(session.getLastKnownCatalogue()).toBeNull();
+    await session.refresh();await session.refresh();
+    expect(reviewChanges(null,session.getLastKnownCatalogue()!,approved,items).kind).toBe('blocked');
+    await session.refresh();
+    expect(session.getLastKnownCatalogue()?.revision).toBe(2);
+    expect(reviewChanges(null,session.getLastKnownCatalogue()!,approved,items).kind).toBe('review');
+  });
+});
