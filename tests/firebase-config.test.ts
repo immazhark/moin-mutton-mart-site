@@ -17,3 +17,21 @@ describe('Firebase environment boundary',()=>{
     expect(validatePublicConfig(preview,'other.pages.dev')).toBeNull();
   });
 });
+
+describe('authentication destination and transport boundaries',()=>{
+  const preview={...config,projectId:'demo-moin-test',allowedHost:'preview.pages.dev',authDomain:'demo-moin-test.firebaseapp.com'};
+  it('rejects unrelated auth handlers, malformed DNS labels and blank credentials',()=>{
+    expect(validatePublicConfig({...preview,authDomain:'moin-mutton-mart.firebaseapp.com'},preview.allowedHost)).toBeNull();
+    expect(validatePublicConfig({...preview,authDomain:'other.example'},preview.allowedHost)).toBeNull();
+    for(const host of ['-bad.pages.dev','bad-.pages.dev','bad..pages.dev','bad.pages.dev.']){
+      expect(validatePublicConfig({...preview,allowedHost:host},host)).toBeNull();
+    }
+    expect(validatePublicConfig({...preview,apiKey:'   '},preview.allowedHost)).toBeNull();
+    expect(validatePublicConfig({...preview,appId:'bad app'},preview.allowedHost)).toBeNull();
+  });
+  it('permits the isolated loopback QA configuration and normal HTTPS hosts',()=>{
+    const loop={...preview,projectId:'demo-moin-security',authDomain:'demo-moin-security.firebaseapp.com',allowedHost:'127.0.0.1'};
+    expect(validatePublicConfig(loop,'127.0.0.1')).toEqual(loop);
+    expect(validatePublicConfig(preview,preview.allowedHost)).toEqual(preview);
+  });
+});
