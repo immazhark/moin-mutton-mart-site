@@ -41,14 +41,43 @@ test('owner membership gates editing, session is separate from public, audited s
   await expect(html).toHaveAttribute('data-qa-public-user','absent');
   const rate=page.getByRole('textbox',{name:'Mutton with bone rate in rupees'});
   await expect(rate).toBeEnabled();
+  await page.getByRole('button',{name:'Chicken',exact:true}).click();
+  await expect(rate).not.toBeVisible();
+  await expect(page.getByRole('textbox',{name:'Desi chicken rate in rupees'})).toBeVisible();
+  await page.getByRole('button',{name:'All',exact:true}).click();
   await rate.fill('1200');
+  await page.getByRole('checkbox',{name:'Changed only'}).check();
+  await expect(page.getByRole('textbox',{name:'Desi chicken rate in rupees'})).not.toBeVisible();
+  await expect(rate).toBeVisible();
+  await page.getByRole('checkbox',{name:'Changed only'}).uncheck();
+  // QA-only wrapper throws after the real transaction has committed.
+  await page.evaluate(()=>sessionStorage.setItem('qa-lose-ack','1'));
   await page.getByRole('button',{name:'Save changes'}).click();
+  await expect(page.getByRole('button',{name:'Verify / retry'})).toBeVisible({timeout:15000});
+  const recorded=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('moin-owner-pending-v1')??'null'));
+  expect(recorded?.intent?.operationId).toBeTruthy();
+  await page.reload();
+  await expect(page.getByRole('button',{name:'Verify / retry'})).toBeVisible({timeout:15000});
+  await expect(rate).toHaveValue('1200.00');
+  await expect(rate).toBeDisabled();
+  await page.getByRole('button',{name:'Verify / retry'}).click();
   await expect(page.getByText('Saved successfully. Revision 2.')).toBeVisible({timeout:15000});
+  await expect.poll(()=>page.evaluate(()=>sessionStorage.getItem('moin-owner-pending-v1'))).toBeNull();
+  // Backup restore is a draft, not a write.
+  const downloadPromise=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Export draft'}).click();
+  const download=await downloadPromise;
+  const backup=await download.path();
+  expect(backup).toBeTruthy();
+  await page.locator('input[type="file"]').setInputFiles(backup!);
+  await expect(page.getByText('Backup loaded into the draft. Review all changes before saving. Nothing has been published.')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Save changes'})).toBeDisabled();
   await expect(rate).toBeEnabled();
   await env.withSecurityRulesDisabled(async context=>{
     const db=context.firestore();
     const current=(await getDocFromServer(doc(db,'public','catalogue'))).data()!;
     expect(current.revision).toBe(2);
+    expect(current.operationId).toBe(recorded.intent.operationId);
     expect(current.offers['mutton-bone'].pricePaise).toBe(120000);
     const audit=(await getDocFromServer(doc(db,'audit',current.operationId))).data()!;
     expect(audit.actorUid).toBe(uid);
