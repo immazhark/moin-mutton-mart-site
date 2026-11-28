@@ -4,6 +4,8 @@ import Counter from '../components/Counter.astro';
 import {Image} from 'astro:assets';
 import logo from '../assets/logo.png';
 import '../styles/global.css';
+import {shop,locality,callUrl,whatsappUrl,localityMapUrl,homeTitle,homeDescription,canonicalUrl,socialLogo,shopGraph,questions} from '../data/shop';
+const graph=JSON.stringify(shopGraph()).replace(/</g,'\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -12,8 +14,22 @@ import '../styles/global.css';
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="robots" content="noindex,nofollow" />
     <meta name="theme-color" content="#202321" />
-    <meta name="description" content="Browse Moin Mutton Mart’s range in Mallepally, Hyderabad, and prepare a WhatsApp request." />
-    <title>Moin Mutton Mart · Mallepally</title>
+    <meta name="description" content={homeDescription} />
+    <link rel="canonical" href={canonicalUrl('/')} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={shop.name} />
+    <meta property="og:title" content={homeTitle} />
+    <meta property="og:description" content={homeDescription} />
+    <meta property="og:url" content={canonicalUrl('/')} />
+    <meta property="og:locale" content="en_IN" />
+    <meta property="og:image" content={socialLogo} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content={String(logo.width)} />
+    <meta property="og:image:height" content={String(logo.height)} />
+    <meta property="og:image:alt" content={shop.name+' logo'} />
+    <meta name="twitter:card" content="summary" />
+    <title>{homeTitle}</title>
+    <script type="application/ld+json" is:inline set:html={graph}></script>
   </head>
   <body>
     <a class="skip" href="#catalogue">Skip to the range</a>
@@ -21,22 +37,35 @@ import '../styles/global.css';
       <a class="brand" href="/" aria-label="Moin Mutton Mart home">
         <Image src={logo} width={40} densities={[1,2,3]} format="webp" quality={90} loading="eager" decoding="async" alt="" />
         <span class="brand-text">
-          <strong>Moin Mutton Mart</strong>
-          <small><MapPin size={13} aria-hidden="true" /> Mallepally, Hyderabad</small>
+          <strong>{shop.name}</strong>
+          <small><MapPin size={13} aria-hidden="true" /> {locality}</small>
         </span>
       </a>
-      <a class="call" href="tel:+918143730054"><Phone size={18} aria-hidden="true" /> Call</a>
+      <a class="call" href={callUrl}><Phone size={18} aria-hidden="true" /> Call</a>
     </header>
     <main>
       <noscript>
         <link rel="stylesheet" href="/no-js.css" />
-        <section class="no-script-contact" aria-labelledby="direct-contact"><h2 id="direct-contact">Contact the counter</h2><p>JavaScript is off. Browse the range below and ask the shop directly about cuts, rates and availability.</p><a class="btn-primary" href="https://wa.me/918143730054" rel="noreferrer"><MessageCircle size={20} aria-hidden="true"/> Ask on WhatsApp</a></section>
+        <section class="no-script-contact" aria-labelledby="direct-contact"><h2 id="direct-contact">Contact the counter</h2><p>JavaScript is off. Browse the range below and ask the shop directly about cuts, rates and availability.</p><a class="btn-primary" href={whatsappUrl} rel="noreferrer"><MessageCircle size={20} aria-hidden="true"/> Ask on WhatsApp</a></section>
       </noscript>
       <Counter />
       <section class="visit" aria-labelledby="visit-title">
         <h2 id="visit-title">Visit the shop</h2>
-        <p>Mallepally, Hyderabad. Call to confirm directions, opening hours and collection.</p>
-        <a class="btn-secondary" href="tel:+918143730054"><Phone size={18} aria-hidden="true" /> +91 81437 30054</a>
+        <p class="visit-intro">{shop.name} is a local meat shop in {locality}, Telangana, India. Browse mutton, chicken and speciality cuts, prepare a request, and confirm the final rate, weight and availability with the counter by WhatsApp or phone.</p>
+        <address class="visit-address">
+          <strong>{locality}</strong>
+          <span>Opening hours: call to confirm.</span>
+          <span>Call for the exact shop location and collection time.</span>
+        </address>
+        <div class="visit-actions">
+          <a class="btn-secondary" href={callUrl}><Phone size={18} aria-hidden="true" /> {shop.phoneDisplay}</a>
+          <a class="btn-secondary" href={localityMapUrl} rel="noreferrer"><MapPin size={18} aria-hidden="true" /> Search Mallepally on Maps</a>
+          <a class="btn-secondary" href={shop.instagram} rel="noreferrer">Instagram</a>
+        </div>
+      </section>
+      <section class="visit order-guide" aria-labelledby="guide-title">
+        <h2 id="guide-title">Before you order</h2>
+        {questions.map(({question,answer})=><details><summary>{question}</summary><p>{answer}</p></details>)}
       </section>
     </main>
     <footer class="site-footer">

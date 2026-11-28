@@ -1,0 +1,5 @@
+# Prelaunch: allow crawlers to read the noindex response and HTML directives.
+# Do not advertise or submit the launch sitemap before explicit approval.
+# Separate training-crawler policy awaits the owner's choice.
+User-agent: *
+Allow: /

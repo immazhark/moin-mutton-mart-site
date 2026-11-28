@@ -225,3 +225,12 @@ main { max-width: 1120px; margin: 0 auto; }
 .review-content { display: contents; }
 .review-content > * { margin-left: var(--s4); margin-right: var(--s4); }
 .review-content > :last-child { margin-bottom: calc(var(--s4) + var(--safe-bottom)); }
+
+/* Local information follows the catalogue; no map embed or extra customer script. */
+.visit-address { display: grid; gap: var(--s1); font-style: normal; margin-block: var(--s3); }
+.visit-address span { color: var(--muted); font-size: .9375rem; }
+.visit-actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+.visit-actions a { min-height: 44px; padding-block: 8px; }
+.order-guide details { border-top: 1px solid var(--line); }
+.order-guide summary { min-height: 44px; padding-block: var(--s3); cursor: pointer; font-weight: 600; }
+.order-guide details p { padding: 0 0 var(--s3); margin: 0; line-height: 1.6; }
