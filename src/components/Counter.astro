@@ -1,6 +1,7 @@
 ---
 import {Search,ShoppingBasket,Beef,Drumstick,Plus,Minus,X,Trash2,MessageCircle,Phone,Copy} from 'lucide-react';
 import {products,categories} from '../data/products';
+import {shop,callUrl} from '../data/shop';
 import {MAX_LINE_NOTE,MAX_ORDER_NOTE,formatQuantity,type Product} from '../lib/order/order';
 function unitHint(p:Product){
   if(p.unit==='g')return 'By weight · from '+formatQuantity(p,p.step);
@@ -55,8 +56,8 @@ function unitHint(p:Product){
       <a data-action="handoff" class="btn-primary whatsapp" target="_blank" rel="noopener noreferrer" hidden><MessageCircle size={20} aria-hidden="true"/> <span data-role="handoff-label"></span></a>
       <p data-role="long-link" tabindex="-1" class="qualify" role="alert" hidden>This request is too long for a WhatsApp link. Copy the unpriced request or call the shop.</p>
       <button data-action="check" type="button" class="btn-primary whatsapp" aria-disabled="false"><MessageCircle size={20} aria-hidden="true"/> <span data-role="check-label">Check latest rates &amp; availability</span></button>
-      <p class="destination">Opens a chat with +91 81437 30054. You send the message yourself.</p>
-      <div class="fallbacks"><button data-action="copy" type="button" class="btn-secondary"><Copy size={18} aria-hidden="true"/> <span data-role="copy-label">Copy request</span></button><a class="btn-secondary" href="tel:+918143730054"><Phone size={18} aria-hidden="true"/> Call instead</a></div>
+      <p class="destination">Opens a chat with {shop.phoneDisplay}. You send the message yourself.</p>
+      <div class="fallbacks"><button data-action="copy" type="button" class="btn-secondary"><Copy size={18} aria-hidden="true"/> <span data-role="copy-label">Copy request</span></button><a class="btn-secondary" href={callUrl}><Phone size={18} aria-hidden="true"/> Call instead</a></div>
       <p class="destination">Copy request always copies an unpriced enquiry, not an estimate.</p>
       <p role="status" aria-label="Clipboard status" class="copy-status"></p>
       <textarea class="copy-fallback" dir="auto" aria-label="Request text" readonly hidden></textarea>
