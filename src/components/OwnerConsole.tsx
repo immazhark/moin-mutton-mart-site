@@ -61,6 +61,8 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
   const scope={projectId:services.db.app.options.projectId??'',uid:user.uid};
   const alive=useRef(false), serial=useRef(0), busy=useRef(false), memberCheck=useRef(false);
   const fileRef=useRef<HTMLInputElement>(null);
+  const errorRef=useRef<HTMLParagraphElement>(null);
+  useEffect(()=>{if(error)errorRef.current?.focus();},[error]);
   const operationBusy=saveState==='saving'||checking||load==='loading';
   const savedForm=base?formFromCatalogue(base):null;
   const dirty=!!(form&&savedForm&&JSON.stringify(form)!==JSON.stringify(savedForm));
@@ -196,7 +198,7 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
   return <section className="owner-console">
     <div className="owner-session"><div><strong>Owner session</strong><small>Signed in with Google</small></div><button className="owner-secondary" disabled={operationBusy} onClick={()=>void leave()}><LogOut size={17}/> Sign out</button></div>
     {notice&&<p className="owner-success" role="status">{notice}</p>}
-    {error&&<p className="owner-error" role="alert"><AlertCircle size={18}/>{error}</p>}
+    {error&&<p ref={errorRef} tabIndex={-1} className="owner-error" role="alert"><AlertCircle size={18}/>{error}</p>}
     {load==='loading'&&<p role="status">Checking administrator access…</p>}
     {load==='denied'&&<section className="owner-panel"><h2>Access not authorised</h2><p>This account is not an active shop administrator. Sign out and use the authorised account.</p></section>}
     {load==='error'&&<section className="owner-panel"><h2>Catalogue unavailable</h2><button className="owner-secondary" disabled={checking} onClick={()=>void refresh()}>Retry connection</button></section>}
@@ -215,7 +217,7 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
         <label className="owner-search">Find a product<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search the range"/></label>
         <div className="owner-filters" role="group" aria-label="Product category">{categories.map(c=><button type="button" key={c} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}</div>
         <label className="owner-toggle"><input type="checkbox" checked={changedOnly} onChange={e=>setChangedOnly(e.target.checked)}/> Changed only</label>
-        <p className="owner-muted" role="status">{visibleProducts.length} of {products.length} items shown. Filters never change the draft.</p>
+        <p className="owner-muted" role="status">{visibleProducts.length} of {products.length} shown. Your draft is preserved.</p>
       </div>
       {!visibleProducts.length&&<p className="owner-panel">No matching products. Change the filters to see the range.</p>}
       <div className="owner-grid">{products.map(product=>{

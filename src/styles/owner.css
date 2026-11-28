@@ -42,3 +42,9 @@
 .owner-tools p{margin:0}.owner-changed{display:inline-block;color:var(--green);font-size:.8125rem;font-weight:700;margin-bottom:4px}
 .owner-product[hidden]{display:none!important}.owner-product input:not([type=checkbox]){font-variant-numeric:tabular-nums}
 @media(forced-colors:active){.owner-filters button[aria-pressed=true]{border:2px solid Highlight;outline:2px solid Highlight;outline-offset:-5px}}
+
+/* Keep sticky actions compact and focused form fields clear of the mobile save bar. */
+html:has(.owner-page){scroll-padding-block-end:calc(11rem + var(--safe-bottom))}
+.owner-page :is(input,select,summary,button,[tabindex="-1"]){scroll-margin-block:8px}
+@media(max-width:620px){.owner-save{padding:8px 12px calc(8px + var(--safe-bottom));gap:8px}.owner-save .owner-actions button{padding-inline:8px}.owner-save>div:first-child{font-size:.875rem}.owner-save small{font-size:.75rem}.owner-section-title{gap:4px}.owner-section-title h2{margin-bottom:4px}}
+@media(max-height:30rem){html:has(.owner-page){scroll-padding-block-end:1rem}}

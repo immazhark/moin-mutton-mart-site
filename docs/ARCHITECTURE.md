@@ -246,3 +246,7 @@ The initial measured React client runtime alone exceeded the 60,000-byte gzip cu
 ## 28 November — launch-safe local discovery
 
 The customer route remains static. src/data/shop.ts centralizes supplied public facts, typed unknown street/pin/hours, canonical URLs, original-logo sharing metadata, linked Store/WebSite/WebPage graph and visible FAQ. src/lib/shop/hours.ts is a tested schedule helper, not a claim of real opening hours; runtime opening status remains disabled until verified hours. robots and sitemap are prelaunch candidates; existing HTTP/HTML noindex retained. No map embeds or additional client dependency. See [local discovery and launch checklist](LOCAL-DISCOVERY.md) for evidence, crawler-policy decision, profile and publication gates. No external account edits or SEO ranking claims.
+
+## Phase 6 — owner recovery and privacy boundary
+
+owner-recovery.ts validates a bounded, same-project/same-UID tab recovery envelope for an explicitly submitted operation, fixed two-hour restoration window; no automatic writes, no ordinary draft persistence. OwnerEditor reads it only after server membership and catalogue read, then offers explicit same-intent retry. Firebase transaction/rules and backup format unchanged. Customer clear-basket control in privacy page removes only the saved basket key; storage deletion resets active counter memory and invalidates handoff. See PRIVACY-DATA-MAP.md and OWNER_CONSOLE.md for data lifecycle, risks and release gates.

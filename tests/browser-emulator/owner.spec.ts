@@ -73,6 +73,9 @@ test('owner membership gates editing, session is separate from public, audited s
   await expect(page.getByText('Backup loaded into the draft. Review all changes before saving. Nothing has been published.')).toBeVisible();
   await expect(page.getByRole('button',{name:'Save changes'})).toBeDisabled();
   await expect(rate).toBeEnabled();
+  const stock=page.getByRole('textbox',{name:'Mutton with bone stock in grams'});
+  await stock.focus();
+  await expect.poll(()=>stock.evaluate(el=>{const r=el.getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit===el;})).toBe(true);
   await page.locator('.owner-tools').scrollIntoViewIfNeeded();
   console.log('OWNER_QA_SCREENSHOT '+(await page.screenshot({type:'jpeg',quality:60})).toString('base64'));
   await env.withSecurityRulesDisabled(async context=>{
