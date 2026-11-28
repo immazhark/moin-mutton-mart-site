@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/knip@6.41.0/schema.json",
+  "entry": [
+    "src/pages/**/*.astro",
+    "src/pages/**/*.ts",
+    "tests/**/*.test.{ts,mjs}",
+    "tests/e2e/*.spec.ts",
+    "tests/browser-emulator/*.spec.ts",
+    "tests/emulator/*.test.mjs"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx,astro}",
+    "tests/**/*.{ts,mjs}"
+  ],
+  "ignoreExportsUsedInFile": true
+}
