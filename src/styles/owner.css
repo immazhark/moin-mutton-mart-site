@@ -48,3 +48,25 @@ html:has(.owner-page){scroll-padding-block-end:calc(11rem + var(--safe-bottom))}
 .owner-page :is(input,select,summary,button,[tabindex="-1"]){scroll-margin-block:8px}
 @media(max-width:620px){.owner-save{padding:8px 12px calc(8px + var(--safe-bottom));gap:8px}.owner-save .owner-actions button{padding-inline:8px}.owner-save>div:first-child{font-size:.875rem}.owner-save small{font-size:.75rem}.owner-section-title{gap:4px}.owner-section-title h2{margin-bottom:4px}}
 @media(max-height:30rem){html:has(.owner-page){scroll-padding-block-end:1rem}}
+
+
+/* Daily counter: merchant information hierarchy and visible draft inventory state. */
+.owner-page{--surface:#fffdf7;--line:#d9cbb6;--muted:#62594c}
+.owner-counter-status{background:#44262c;border:1px solid #775049;border-radius:10px 10px 24px 10px;color:#fff5df;padding:15px;margin:0 0 16px}
+.owner-counter-heading span{font-size:.65rem;font-weight:750;letter-spacing:.08em;color:#edc784}
+.owner-counter-heading h2{font-family:Georgia,serif;font-size:1.65rem;letter-spacing:-.04em;margin:4px 0}
+.owner-counter-heading p{font-size:.8rem;color:#f1e4d4;margin:0 0 12px}
+.owner-counter-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border-top:1px dashed #d7b880;padding-top:10px}
+.owner-counter-metrics>div{min-width:0}
+.owner-counter-metrics small{display:block;color:#f1e4d4;font-size:.75rem}
+.owner-counter-metrics strong{display:block;color:#f0cc88;font-variant-numeric:tabular-nums;font-size:1.55rem}
+.owner-product{border-inline-start:4px solid #742e3e;border-radius:8px 8px 16px 8px}
+.owner-product[data-owner-theme="Chicken"]{border-inline-start-color:#a66122}
+.owner-product[data-owner-theme="Speciality cuts"]{border-inline-start-color:#244b3c}
+.owner-product[data-owner-listed=false]{border-inline-start-color:#857f74}
+.owner-product label:not(.owner-toggle){color:#3d3028}
+.owner-product input:not([type=checkbox]),.owner-product select{background:#fffdf7}
+.owner-product input:not([type=checkbox]):focus,.owner-product select:focus{border-color:#176343}
+.owner-primary{border-radius:6px 16px 6px 6px}
+.owner-save{background:#fffaf0;border-top:1px solid #d9cbb6}
+@media(prefers-reduced-motion:no-preference){.owner-product{transition:border-color .16s ease}.owner-product input:not([type=checkbox]),.owner-product select{transition:border-color .15s ease}.owner-primary:not(:disabled):active{transform:scale(.98)}}
