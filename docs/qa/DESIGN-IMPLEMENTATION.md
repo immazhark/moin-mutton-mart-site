@@ -351,3 +351,7 @@ Verified f0547f0 [app](https://github.com/immazhark/moin-mutton-mart-site/action
 ### Phase 9 evidence update (28 November 2026)
 
 Verified 5c4b5bc / synthetic merge ac9ff44 (same tree): six workflows successful; isolated lab 46123253718, home mobile 100 performance/100 accessibility/96 best practices/69 SEO, LCP 902.67 ms, CLS 0, TBT 0; disconnected admin mobile LCP 901.64 ms. Four route favicon 404 and privacy mobile CLS 0.031703 fail strict quality goals; test-first c35291d and source fix 56f5c7c pending exact-head verification. Axe seven states zero violations, two contrast incomplete; Pa11y four routes zero errors. Field/device/owner/live headers, confirmed facts, B3 and release gate remain blocked or unverified; no noindex removal or unsupported score. See RELEASE-EVIDENCE-9.md for complete metrics and artifact references.
+
+
+### Visual acceptance reset (28 November 2026)
+User rejected Phase 8 design. Status: visual gate FAILED; new draft PR #16 implements hero, secondary banner, local illustrative photography, visual categories and warmer palette. Preview 3660d2c actual 320/390/1280 rendered review; further responsive corrections pending exact-head CI. No new dependency, no live changes. Actual product imagery and approval still blocked. See VISUAL-COMMERCE-RESET.md. Do not close B3 or §15 on lab scores alone.
