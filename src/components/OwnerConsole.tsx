@@ -204,6 +204,7 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
     {load==='error'&&<section className="owner-panel"><h2>Catalogue unavailable</h2><button className="owner-secondary" disabled={checking} onClick={()=>void refresh()}>Retry connection</button></section>}
     {form&&base&&load!=='denied'&&<>
       <div className="owner-summary"><div><small>Catalogue revision</small><strong>{base.revision}</strong></div><div><small>Products</small><strong>{products.length}</strong></div><div><small>Draft</small><strong>{dirty?'Unsaved':'Up to date'}</strong></div></div>
+      <section className="owner-counter-status" aria-label="Draft inventory overview"><div className="owner-counter-heading"><span>THE DAILY COUNTER</span><h2>Inventory at a glance</h2><p>Current draft, not published stock.</p></div><div className="owner-counter-metrics"><div><small>Listed</small><strong>{products.filter(p=>form.offers[p.id].enabled).length}</strong></div><div><small>Sold out</small><strong>{products.filter(p=>form.offers[p.id].enabled&&(form.offers[p.id].availability==='sold_out'||form.offers[p.id].stock.trim()==='0')).length}</strong></div><div><small>Edited</small><strong>{changedIds.size}</strong></div></div></section>
       {missingBasis.length>0&&<p className="owner-warning">Publication is locked until the charging units are approved for {missingBasis.length} products. You can prepare and export a draft; no unconfirmed rates will be published.</p>}
       {load==='refresh-required'&&!unresolved&&<p className="owner-warning">Editing is paused until access and current data are verified. Export your draft before reloading if you need to retain changes.</p>}
       <fieldset className="owner-panel owner-settings" disabled={controlsDisabled}><legend><Store size={18}/> Shop settings</legend>
@@ -222,7 +223,7 @@ function OwnerEditor({services,user}:{services:FirebaseServices;user:User}){
       {!visibleProducts.length&&<p className="owner-panel">No matching products. Change the filters to see the range.</p>}
       <div className="owner-grid">{products.map(product=>{
         const o=form.offers[product.id];const unit=product.unit==='g'?'grams':product.unit==='piece'?'pieces':'sets';
-        return <fieldset className="owner-product" key={product.id} hidden={!visibleProducts.includes(product)} disabled={controlsDisabled}>
+        return <fieldset className="owner-product" data-owner-theme={product.category} data-owner-listed={String(o.enabled)} key={product.id} hidden={!visibleProducts.includes(product)} disabled={controlsDisabled}>
           <legend>{product.name}</legend>{changedIds.has(product.id)&&<span className="owner-changed">Edited</span>}<p className="owner-muted">{product.category} · Rate basis: {product.pricingBasis??'unconfirmed'}</p>
           <label className="owner-toggle"><input type="checkbox" checked={o.enabled} onChange={e=>patch(product.id,{enabled:e.target.checked})}/> Listed in shop</label>
           <div className="owner-fields"><label>Rate (₹)<input aria-label={product.name+' rate in rupees'} inputMode="decimal" maxLength={10} value={o.price} onChange={e=>patch(product.id,{price:e.target.value})} placeholder="No rate"/></label>

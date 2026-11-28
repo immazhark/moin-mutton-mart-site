@@ -1,7 +1,7 @@
 name: Unused code audit
 on:
   pull_request:
-    branches: [main, 'feat/**']
+    branches: [main, 'feat/**', 'chore/chatgpt-release-evidence']
 permissions:
   contents: read
 concurrency:

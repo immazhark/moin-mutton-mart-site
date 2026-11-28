@@ -1,7 +1,7 @@
 name: Firebase SDK dependency audit
 on:
   pull_request:
-    branches: ['feat/premium-counter-redesign']
+    branches: ['feat/premium-counter-redesign', 'chore/chatgpt-release-evidence']
     paths: ['package.json', 'package-lock.json', '.github/workflows/sdk-audit.yml']
 permissions:
   contents: read

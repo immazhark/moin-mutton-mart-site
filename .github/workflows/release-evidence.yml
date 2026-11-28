@@ -1,7 +1,7 @@
 name: Isolated release evidence
 on:
   pull_request:
-    branches: [main, 'feat/**']
+    branches: [main, 'feat/**', 'chore/chatgpt-release-evidence']
     paths:
       - '.github/workflows/release-evidence.yml'
       - 'tests/support/release-evidence.mjs'

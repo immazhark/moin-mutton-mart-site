@@ -1,4 +1,5 @@
 import {products,categories} from '../data/products';
+import {createCounterMotion} from './counter-motion';
 import {CatalogueSession,reviewChanges,requestEstimate,type CatalogueSnapshot} from '../lib/catalogue/freshness';
 import {assessQuantity,displayedRate} from '../lib/catalogue/contract';
 import {loadPublicCatalogue} from '../lib/catalogue/public-read';
@@ -49,6 +50,7 @@ export function mountCounter(root:HTMLElement){
   const opener=button(basket,'open');
   const count=role(root,'count');
   const dialog=node<HTMLDialogElement>(root,'dialog');
+  const motion=createCounterMotion(root);
   const close=button(dialog,'close');
   const review=role(dialog,'review');
   const empty=role(dialog,'empty');
@@ -256,6 +258,7 @@ export function mountCounter(root:HTMLElement){
     else items.push({productId:id,quantity:q,note:''});
     if(!items.length)forgetOrderDetails();
     persist();edited();render();
+    if(!dialog.open&&delta>0)motion.added(getCard(id),basket);
   }
   function remove(id:string){
     items=items.filter(s=>s.productId!==id);if(!items.length)forgetOrderDetails();persist();edited();render();
@@ -309,7 +312,7 @@ export function mountCounter(root:HTMLElement){
     const el=event.target instanceof Element?event.target.closest<HTMLElement>('button,a[data-action]'):null;
     if(!el||!root.contains(el))return;
     const filterValue=el.dataset.categoryFilter;
-    if(filterValue&&categories.includes(filterValue as typeof category)){category=filterValue as typeof category;filter();return;}
+    if(filterValue&&categories.includes(filterValue as typeof category)){const changed=category!==filterValue;category=filterValue as typeof category;filter();if(changed)motion.categories();return;}
     const mode=el.dataset.fulfil;
     if(mode==='pickup'||mode==='delivery'||mode==='discuss'){fulfilment=mode;edited();renderLines();return;}
     const id=el.closest<HTMLElement>('[data-product]')?.dataset.product;

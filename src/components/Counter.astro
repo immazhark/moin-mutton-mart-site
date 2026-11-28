@@ -1,9 +1,20 @@
 ---
-import {Search,ShoppingBasket,Plus,Minus,X,Trash2,MessageCircle,Phone,Copy,ChevronRight,Check,Scale} from 'lucide-react';
+import {Search,ShoppingBasket,Plus,Minus,X,Trash2,MessageCircle,Phone,Copy,ChevronRight,Check,Scale,LayoutGrid,Utensils,ArrowRight} from 'lucide-react';
+import {Image} from 'astro:assets';
+import CutMark from './CutMark.astro';
+import meal from '../assets/meal-inspiration.jpg';
+import chickenPhoto from '../assets/chicken-reference.jpg';
+import muttonPhoto from '../assets/mutton-reference.jpg';
+import familyMeal from '../assets/family-meal.jpg';
 import {products,categories} from '../data/products';
 import {shop,callUrl} from '../data/shop';
 import {MAX_LINE_NOTE,MAX_ORDER_NOTE,formatQuantity,type Product} from '../lib/order/order';
 const groups=[...new Set(products.map(p=>p.category))].map((name,i)=>({name,id:'cut-group-'+i,products:products.filter(p=>p.category===name)}));
+const themes:Record<string,{key:string;chapter:string;subtitle:string;mark:string}>={
+  Mutton:{key:'mutton',chapter:'01 / THE MUTTON COUNTER',subtitle:'Bone-in, boneless and leg cuts',mark:'mutton-bone'},
+  'Speciality cuts':{key:'speciality',chapter:'02 / THE SPECIALITY COUNTER',subtitle:'Paya, boti and traditional cuts',mark:'paya'},
+  Chicken:{key:'chicken',chapter:'03 / THE CHICKEN COUNTER',subtitle:'Live, skinless and desi chicken',mark:'live-chicken'}
+};
 function unitHint(p:Product){
   if(p.unit==='g')return 'From';
   if(p.unit==='set')return p.setContents?'Per set ·':'Per set';
@@ -11,7 +22,20 @@ function unitHint(p:Product){
 }
 ---
 <section id="catalogue" tabindex="-1" class="catalogue" aria-labelledby="shop-title">
-  <div class="shop-head">
+  <section class="market-hero" aria-label="Welcome to Moin Mutton Mart">
+    <div class="market-hero-copy">
+      <p class="market-kicker"><span class="hero-rule" aria-hidden="true"></span> THE MALLEPALLY COUNTER</p>
+      <p class="market-headline">Make it a<br/><em>Moin meal.</em></p>
+      <p class="market-intro">Mutton, chicken &amp; speciality cuts. Your kitchen, your way.</p>
+      <a class="market-cta" href="#cut-range">Explore cuts <ArrowRight size={17} aria-hidden="true"/></a>
+    </div>
+    <figure class="market-hero-photo">
+      <Image src={meal} width={480} format="webp" quality={78} alt="Illustrative bowl of biryani" loading="eager" fetchpriority="high" decoding="async"/>
+      <figcaption>Cooking inspiration</figcaption>
+    </figure>
+    <svg class="hero-seal" viewBox="0 0 92 92" aria-hidden="true"><circle cx="46" cy="46" r="44" fill="#e9bd6e"/><circle cx="46" cy="46" r="38" fill="none" stroke="#542c28" stroke-width="1" stroke-dasharray="2 3"/><path d="M25 26H67M25 65H67" stroke="#542c28"/><text x="46" y="21" text-anchor="middle" font-size="8" font-weight="700" fill="#542c28">HYDERABAD</text><text x="46" y="54" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#542c28">MOIN</text><text x="46" y="77" text-anchor="middle" font-size="7" font-weight="700" fill="#542c28">MALLEPALLY</text></svg>
+  </section>
+  <div class="shop-head" id="cut-range">
     <div class="counter-intro">
       <h1 id="shop-title">Choose your cuts</h1>
       <p class="counter-instruction">Add cuts. Review, then send on WhatsApp.</p>
@@ -20,16 +44,25 @@ function unitHint(p:Product){
   </div>
   <label class="search"><Search size={18} aria-hidden="true"/><span class="sr-only">Search the range</span><input data-role="search" type="search" dir="auto" placeholder="Search the range"/></label>
   <div class="categories" role="group" aria-label="Categories">
-    {categories.map(category=><button type="button" data-category-filter={category} aria-label={category} aria-pressed={category==='All'}>{category==='Speciality cuts'?'Speciality':category}</button>)}
+    {categories.map(category=><button type="button" data-category-filter={category} aria-label={category} aria-pressed={category==='All'}>
+      <span class="category-visual" aria-hidden="true">
+        {category==='Mutton'?<Image src={muttonPhoto} width={160} format="webp" quality={75} alt="" loading="eager" decoding="async"/>:category==='Chicken'?<Image src={chickenPhoto} width={160} format="webp" quality={75} alt="" loading="eager" decoding="async"/>:category==='All'?<LayoutGrid size={27}/>:<Utensils size={27}/>}
+      </span>
+      <span class="category-label">{category==='Speciality cuts'?'Special cuts':category}</span>
+    </button>)}
   </div>
+  <p class="category-disclosure">Category photos are illustrative.</p>
   <div class="counter-groups" data-role="grid">
-    {groups.map(group=><section class="counter-group" data-group={group.name} aria-labelledby={group.id}>
-      <h2 class="group-title" id={group.id}>{group.name}</h2>
+    {groups.map(group=><section class="counter-group" data-group={group.name} data-theme={themes[group.name]?.key} data-motion-target="category" aria-labelledby={group.id}>
+      <div class="counter-chapter" data-motion-reveal>
+        <div class="chapter-copy"><p>{themes[group.name]?.chapter}</p><h2 class="group-title" id={group.id}>{group.name}</h2><span class="chapter-subtitle">{themes[group.name]?.subtitle}</span></div>
+        <div class="chapter-mark" aria-hidden="true"><CutMark product={themes[group.name]?.mark??'mutton-bone'}/></div>
+      </div>
       <div class="product-grid">
     {group.products.map(p=>{
       return <article class="product-card" data-category={p.category} data-product={p.id}>
         <div class="product-body">
-          <h3>{p.name}</h3>
+          <div class="product-heading"><h3>{p.name}</h3><span class="product-mark" aria-hidden="true"><CutMark product={p.id}/></span></div>
           <p class="unit-hint">{unitHint(p)}{p.unit==='g'&&<> <span class="unit-amount">{formatQuantity(p,p.step)}</span></>}{p.unit==='set'&&p.setContents&&<> <span class="unit-amount">{p.setContents}</span></>}</p>
           <p class="rate" data-role="rate">Ask for today’s rate</p><p class="availability" data-role="availability" hidden>Confirm with shop</p>
           <button type="button" class="add" data-action="increase" aria-label={'Add '+p.name}><Plus size={18} aria-hidden="true"/> Add</button>
@@ -45,18 +78,24 @@ function unitHint(p:Product){
     </section>)}
   </div>
   <p class="no-results" data-role="no-results" hidden></p>
+  <section class="market-banner" data-motion-reveal aria-label="Meal planning">
+    <figure><Image src={familyMeal} width={480} format="webp" quality={74} alt="Illustrative chicken biryani with accompaniments" loading="lazy" decoding="async"/><figcaption>Cooking inspiration</figcaption></figure>
+    <div><p class="market-kicker">Make it your way</p><h2>From the counter to your kitchen.</h2><p>Choose your quantities and tell us your preparation preference in your request.</p><a href="#cut-range">Browse the range <ArrowRight size={16} aria-hidden="true"/></a></div>
+  </section>
   <details class="quantity-guide">
     <summary><Scale size={18} aria-hidden="true"/><span>Choosing quantities &amp; cuts</span><ChevronRight className="guide-chevron" size={18} aria-hidden="true"/></summary>
     <div class="guide-copy"><p>Choose by weight, piece or set as shown. These are requested quantities; the shop confirms the actual weight and charging unit.</p><p>Add your preparation preference in the review. The shop confirms whether it can provide the cut.</p></div>
   </details>
   <div class="basket-bar" data-role="basket" hidden>
-    <ShoppingBasket size={22} aria-hidden="true"/><span class="basket-text"><strong role="status" aria-live="polite" data-role="count"></strong><small>Selected cuts</small></span><button type="button" data-action="open">Review request <ChevronRight size={16} aria-hidden="true"/></button>
+    <span class="basket-icon" data-motion-target="basket"><ShoppingBasket size={23} aria-hidden="true"/></span><span class="basket-text"><strong role="status" aria-live="polite" data-role="count"></strong><small>Selected cuts</small></span><button type="button" data-action="open">Review request <ChevronRight size={16} aria-hidden="true"/></button>
   </div>
   <dialog class="sheet" aria-labelledby="sheet-title">
-    <div class="sheet-head"><h2 id="sheet-title">Your request</h2><button type="button" class="icon-btn" aria-label="Close" data-action="close"><X size={22} aria-hidden="true"/></button></div>
+    <div class="sheet-head"><div><span class="receipt-label">MOIN / ORDER COUNTER</span><h2 id="sheet-title">Your request</h2></div><button type="button" class="icon-btn" aria-label="Close" data-action="close"><X size={22} aria-hidden="true"/></button></div>
     <div class="empty" data-role="empty"><p>Nothing selected yet.</p><button type="button" class="btn-primary" data-action="close">Back to the counter</button></div>
     <div class="review-content" data-role="review" hidden>
+      <div class="receipt-intro"><span aria-hidden="true">01</span><div><strong>Your selection</strong><small>Check cuts and quantities before sending.</small></div></div>
       <ul class="lines" data-role="lines"></ul>
+      <div class="receipt-intro receipt-next"><span aria-hidden="true">02</span><div><strong>Make it yours</strong><small>Choose collection or delivery preference.</small></div></div>
       <fieldset class="fulfil"><legend>Pickup or delivery</legend><div class="segmented">
         <button type="button" data-fulfil="pickup" aria-pressed="false">Pickup</button>
         <button type="button" data-fulfil="delivery" aria-pressed="false">Delivery</button>
@@ -65,6 +104,7 @@ function unitHint(p:Product){
       <details class="note"><summary>Add a note (optional)</summary><label class="field"><span class="sr-only">Order note</span><textarea data-role="order-note" dir="auto" maxlength={MAX_ORDER_NOTE}></textarea></label></details>
       <p class="qualify">No payment here. Rates, availability and final weight are confirmed by the shop.</p>
       <p class="rate" data-role="estimate" hidden></p>
+      <div class="receipt-intro receipt-next"><span aria-hidden="true">03</span><div><strong>Confirm with Moin</strong><small>Check current rates before WhatsApp.</small></div></div>
       <div class="review-stage" data-stage="review"><Check size={18} aria-hidden="true" className="ready-check"/><strong data-role="review-state">Review your selection</strong></div>
       <p class="qualify" role="status" data-role="review-notice" hidden></p>
       <a id="review-handoff" data-action="handoff" class="btn-primary whatsapp" target="_blank" rel="noopener noreferrer" hidden><MessageCircle size={20} aria-hidden="true"/> <span data-role="handoff-label">Continue on WhatsApp</span></a>
