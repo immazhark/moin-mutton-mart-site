@@ -1,7 +1,6 @@
 import {initializeAuth,browserSessionPersistence,browserPopupRedirectResolver,type Auth} from 'firebase/auth';
 import {getFirestore,type Firestore} from 'firebase/firestore';
 import {getFirebaseApp} from './firebase-public';
-export {validatePublicConfig,type PublicConfig} from './firebase-public';
 
 export interface FirebaseServices {auth:Auth;db:Firestore}
 let services:FirebaseServices|undefined;

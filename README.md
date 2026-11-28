@@ -17,3 +17,5 @@ Do not commit commercial agreements, private identities, credentials or customer
 Before work, read the [binding directives](docs/directives/BINDING-INTERPRETATION.md), [master prompt](docs/directives/MASTER-EXECUTION-PROMPT.md) and [handoff](docs/HANDOFF.md). The latest verification status is in [living matrix](docs/qa/DESIGN-IMPLEMENTATION.md).
 
 Current customer path: static Astro Counter.astro with native controller (no client React hydration); React owner console remains. Public catalogue uses strict fixed-document REST reads; authenticated owner SDK and Rules unchanged. Local browser payload assertion: npm run test:e2e; configured fixture via isolated SDK emulator CI. See docs/HANDOFF.md for exact verified heads, measurements and remaining release gates.
+
+Quality commands: npm run lint (strict Astro/TS check), npm test, npm run build, npm run test:e2e (Chromium full suite), PLAYWRIGHT_BROWSER=firefox npm run test:smoke or PLAYWRIGHT_BROWSER=webkit npm run test:smoke (install matching browser first). Read [QA runbook](docs/qa/QUALITY-RUNBOOK.md) for emulator isolation, unused-code gate, exact evidence and release limitations.

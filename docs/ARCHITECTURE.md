@@ -250,3 +250,7 @@ The customer route remains static. src/data/shop.ts centralizes supplied public 
 ## Phase 6 — owner recovery and privacy boundary
 
 owner-recovery.ts validates a bounded, same-project/same-UID tab recovery envelope for an explicitly submitted operation, fixed two-hour restoration window; no automatic writes, no ordinary draft persistence. OwnerEditor reads it only after server membership and catalogue read, then offers explicit same-intent retry. Firebase transaction/rules and backup format unchanged. Customer clear-basket control in privacy page removes only the saved basket key; storage deletion resets active counter memory and invalidates handoff. See PRIVACY-DATA-MAP.md and OWNER_CONSOLE.md for data lifecycle, risks and release gates.
+
+## Phase 7 — single supported customer implementation
+
+Counter.astro and src/scripts/counter.ts are the supported public route. The superseded React Catalogue/ProductCard/ReviewSheet/Stepper and retired browser-emulator CatalogueHarness are no longer in the active source tree; historical code at 70b185d and reference/demo remain recoverable and unchanged. The React OwnerConsole and authenticated SDK remain. Storage decoder now requires exact safe persisted shape; no additional persisted customer fields. Static 404 recovery, stricter Astro/TS check, build artifact assertions and Knip/cross-browser QA preserve the release gates. See docs/qa/QUALITY-RUNBOOK.md. Earlier mentions of the retained old customer files are historical.

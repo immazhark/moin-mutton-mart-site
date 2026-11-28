@@ -1,0 +1,27 @@
+name: Unused code audit
+on:
+  pull_request:
+    branches: [main, 'feat/**']
+permissions:
+  contents: read
+concurrency:
+  group: knip-audit-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  knip:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - name: Audit using an isolated pinned tool version (read-only, never auto-fix)
+        run: |
+          mkdir -p "$RUNNER_TEMP/moin-knip"
+          npm install --prefix "$RUNNER_TEMP/moin-knip" --ignore-scripts --no-fund --no-audit --save-exact knip@6.41.0
+          npm audit --prefix "$RUNNER_TEMP/moin-knip" --audit-level=high
+          "$RUNNER_TEMP/moin-knip/node_modules/.bin/knip" --include files,dependencies,unlisted,exports,types

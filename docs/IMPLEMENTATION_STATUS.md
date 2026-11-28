@@ -39,3 +39,7 @@ Next: actual Firebase Timestamp adapter, default-deny Rules, atomic audit/confli
 ## 28 November — current phase
 
 See docs/HANDOFF.md and docs/qa/DESIGN-IMPLEMENTATION.md for current status and exact evidence. The earlier entries are historical; do not treat their pending lists as the current branch state.
+
+## 28 November — current verified checkpoint
+
+#7–12 integrated at 70b185d. Phase 7 PR #13 implementation 78102b5 passed all six workflows, 127 test executions and strict static budgets. Final documentation-only head must pass relevant checks before merge. See HANDOFF.md for exact evidence. No production promotion. Phase 8 premium visual transformation remains next.

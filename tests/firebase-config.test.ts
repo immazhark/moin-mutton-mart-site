@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {validatePublicConfig} from '../src/lib/catalogue/firebase-browser';
+import {validatePublicConfig} from '../src/lib/catalogue/public-config';
 
 const config={apiKey:'fixture',authDomain:'moin-mutton-mart.firebaseapp.com',projectId:'moin-mutton-mart',appId:'fixture',allowedHost:'moinmuttonmart.in'};
 describe('Firebase environment boundary',()=>{
