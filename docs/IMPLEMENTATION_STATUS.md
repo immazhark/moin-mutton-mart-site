@@ -43,3 +43,7 @@ See docs/HANDOFF.md and docs/qa/DESIGN-IMPLEMENTATION.md for current status and 
 ## 28 November — current verified checkpoint
 
 #7–12 integrated at 70b185d. Phase 7 PR #13 implementation 78102b5 passed all six workflows, 127 test executions and strict static budgets. Final documentation-only head must pass relevant checks before merge. See HANDOFF.md for exact evidence. No production promotion. Phase 8 premium visual transformation remains next.
+
+## 28 November — Phase 8 visual refinement
+
+#7–13 integrated at f86aeb3. PR #14 f0547f0 implementation checkpoint 77 unit, 43 Chromium, 7 SDK, 3 configured and 4 cross-browser test executions passed. Actual 7-width screenshot review. Configured static JS 10,644 B. See docs/qa/VISUAL-REVIEW-8.md and HANDOFF.md for remaining design, real content, measurement and release gates. Final exact-head CI required. No production promotion.

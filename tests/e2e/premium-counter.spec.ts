@@ -37,6 +37,10 @@ test('review readiness is explicit and immediately reset by edits',async({page})
   await sheet.getByRole('button',{name:'Check latest rates & availability'}).click();
   await expect(state).toHaveText('Ready to enquire');
   await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toBeVisible();
+  await sheet.locator('.review-stage').scrollIntoViewIfNeeded();
+  console.log('MOIN_REVIEW_QA_SCREENSHOT '+(await page.screenshot({type:'jpeg',quality:60})).toString('base64'));
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await expect(sheet.locator('.ready-check')).toHaveCSS('animation-name','none');
   await sheet.getByLabel('Cut or preparation (optional)').fill('Small pieces');
   await expect(state).toHaveText('Review your selection');
   await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toHaveCount(0);
@@ -55,4 +59,18 @@ test('compact rows safely fall back with enlarged text at 390px',async({page})=>
   await page.getByRole('button',{name:'Review request'}).click();
   const sheet=page.getByRole('dialog');
   expect(await sheet.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+});
+
+test('quantity guide is useful with native disclosure and reduced motion',async({browser})=>{
+  const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844},reducedMotion:'reduce'});
+  try{
+    const page=await context.newPage();await page.goto('/');
+    const guide=page.locator('.quantity-guide');
+    await expect(guide.locator('.guide-copy')).not.toBeVisible();
+    await guide.locator('summary').click();
+    await expect(guide.locator('.guide-copy')).toBeVisible();
+    await expect(guide.locator('.guide-chevron')).toHaveCSS('transition-duration','0s');
+    await guide.locator('summary').click();
+    await expect(guide.locator('.guide-copy')).not.toBeVisible();
+  }finally{await context.close();}
 });

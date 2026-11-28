@@ -310,7 +310,7 @@ main { max-width: 1120px; margin: 0 auto; }
   .storefront .site-header{gap:var(--s2)}
   .storefront .brand{flex:1 1 0;gap:var(--s2)}
   .storefront .call{padding-inline:var(--s3)}
-  .storefront .categories button{padding-inline:10px}
+  .storefront .categories button{padding-inline:8px}
   .storefront .categories{padding-bottom:var(--s4)}
   .storefront .product-card{container-type:inline-size}
   /* A wide individual card earns a compact horizontal treatment. Root text
