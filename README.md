@@ -15,3 +15,5 @@ Development: npm ci, npm run dev. Verification: npm test, npm run check, npm run
 Do not commit commercial agreements, private identities, credentials or customer information. No open-source licence granted.
 
 Before work, read the [binding directives](docs/directives/BINDING-INTERPRETATION.md), [master prompt](docs/directives/MASTER-EXECUTION-PROMPT.md) and [handoff](docs/HANDOFF.md). The latest verification status is in [living matrix](docs/qa/DESIGN-IMPLEMENTATION.md).
+
+Current customer path: static Astro Counter.astro with native controller (no client React hydration); React owner console remains. Public catalogue uses strict fixed-document REST reads; authenticated owner SDK and Rules unchanged. Local browser payload assertion: npm run test:e2e; configured fixture via isolated SDK emulator CI. See docs/HANDOFF.md for exact verified heads, measurements and remaining release gates.

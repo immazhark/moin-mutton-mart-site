@@ -219,3 +219,9 @@ main { max-width: 1120px; margin: 0 auto; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* Static counter enhancement: hidden controls must win over authored display rules. */
+.catalogue [hidden] { display: none !important; }
+.review-content { display: contents; }
+.review-content > * { margin-left: var(--s4); margin-right: var(--s4); }
+.review-content > :last-child { margin-bottom: calc(var(--s4) + var(--safe-bottom)); }

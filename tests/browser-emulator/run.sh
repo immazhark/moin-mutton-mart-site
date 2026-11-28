@@ -9,7 +9,6 @@ qa="$(mktemp -d)"
 trap 'rm -rf -- "$qa"' EXIT
 cp -R "$root/src" "$root/public" "$root/astro.config.mjs" "$root/tsconfig.json" "$root/package.json" "$qa/"
 ln -s "$root/node_modules" "$qa/node_modules"
-cp "$root/tests/browser-emulator/CatalogueHarness.tsx.template" "$qa/src/components/CatalogueHarness.tsx"
 cp "$root/tests/browser-emulator/OwnerHarness.tsx.template" "$qa/src/components/OwnerHarness.tsx"
 # These synthetic, test-only charging units exist only in the disposable build.
 # Never rewrite the real product metadata or publish this build.
@@ -22,7 +21,8 @@ const edit=(path,from,to)=>{
   if(input.split(from).length!==2)throw Error('Unexpected fixture source '+path);
   writeFileSync(file,input.replace(from,to));
 };
-edit('src/pages/index.astro',"import Catalogue from '../components/Catalogue';","import Catalogue from '../components/CatalogueHarness';");
+// Only the disposable copy targets loopback, never the actual production source.
+edit('src/lib/catalogue/public-read.ts','https://firestore.googleapis.com/v1/','http://127.0.0.1:8088/v1/');
 edit('src/pages/admin/index.astro',"import OwnerConsole from '../../components/OwnerConsole';","import OwnerConsole from '../../components/OwnerHarness';");
 edit('src/data/products.ts','pricingBasis: null,','pricingBasis: unit === \'g\' ? \'kg\' : unit,');
 NODE

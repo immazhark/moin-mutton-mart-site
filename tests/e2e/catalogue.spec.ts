@@ -133,3 +133,25 @@ test('handoff approval expires without polling',async({page})=>{
   await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toHaveCount(0);
   await expect(sheet.getByRole('button',{name:'Check latest rates & availability'})).toBeEnabled();
 });
+
+test('handoff grant is scoped to one open review and every raw edit',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('button',{name:'Add Mutton with bone',exact:true}).click();
+  const open=page.getByRole('button',{name:'Review request'});
+  await open.click();
+  const sheet=page.getByRole('dialog');
+  const check=sheet.getByRole('button',{name:'Check latest rates & availability'});
+  const link=sheet.getByRole('link',{name:'Continue as unpriced enquiry'});
+  await check.click();await expect(link).toBeVisible();
+  await sheet.getByRole('button',{name:'Close',exact:true}).click();
+  await expect(sheet).not.toBeVisible();
+  await open.click();
+  await expect(link).toHaveCount(0);
+  await check.click();await expect(link).toBeVisible();
+  await sheet.getByLabel('Cut or preparation (optional)').fill(' ');
+  await expect(link).toHaveCount(0);
+  await check.click();await expect(link).toBeVisible();
+  await page.goBack();await expect(sheet).not.toBeVisible();
+  await page.goForward();await expect(sheet).toBeVisible();
+  await expect(link).toHaveCount(0);
+});

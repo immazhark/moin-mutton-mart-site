@@ -1,6 +1,8 @@
 ---
 import { MapPin, Phone, MessageCircle } from 'lucide-react';
-import Catalogue from '../components/Catalogue';
+import Counter from '../components/Counter.astro';
+import {Image} from 'astro:assets';
+import logo from '../assets/logo.png';
 import '../styles/global.css';
 ---
 <!doctype html>
@@ -17,7 +19,7 @@ import '../styles/global.css';
     <a class="skip" href="#catalogue">Skip to the range</a>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Moin Mutton Mart home">
-        <img src="/images/logo.png" width="40" height="50" alt="" />
+        <Image src={logo} width={40} densities={[1,2,3]} format="webp" quality={90} loading="eager" decoding="async" alt="" />
         <span class="brand-text">
           <strong>Moin Mutton Mart</strong>
           <small><MapPin size={13} aria-hidden="true" /> Mallepally, Hyderabad</small>
@@ -30,7 +32,7 @@ import '../styles/global.css';
         <link rel="stylesheet" href="/no-js.css" />
         <section class="no-script-contact" aria-labelledby="direct-contact"><h2 id="direct-contact">Contact the counter</h2><p>JavaScript is off. Browse the range below and ask the shop directly about cuts, rates and availability.</p><a class="btn-primary" href="https://wa.me/918143730054" rel="noreferrer"><MessageCircle size={20} aria-hidden="true"/> Ask on WhatsApp</a></section>
       </noscript>
-      <Catalogue client:load />
+      <Counter />
       <section class="visit" aria-labelledby="visit-title">
         <h2 id="visit-title">Visit the shop</h2>
         <p>Mallepally, Hyderabad. Call to confirm directions, opening hours and collection.</p>
