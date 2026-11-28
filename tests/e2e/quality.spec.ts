@@ -55,3 +55,22 @@ test('the ordinary deployment artifact contains no QA harnesses, source maps or 
     if(name.endsWith('.html'))expect(content,name).toMatch(/<meta[^>]+name=["']robots["'][^>]+content=["']noindex,nofollow["']/i);
   }
 });
+
+test('brand link includes its visible identity and pending handoff is not an empty or actionable link',async({page})=>{
+  await page.goto('/');
+  await expect(page.locator('.brand')).toHaveAccessibleName(/Moin Mutton Mart\s+Mallepally, Hyderabad/);
+  const pending=page.locator('#review-handoff');
+  await expect(pending).toHaveText('Continue on WhatsApp');
+  await expect(pending).toBeHidden();
+  expect(await pending.getAttribute('href')).toBeNull();
+  await page.getByRole('button',{name:'Add Mutton with bone',exact:true}).click();
+  await page.getByRole('button',{name:'Review request'}).click();
+  await expect(pending).toBeHidden();
+  expect(await pending.getAttribute('href')).toBeNull();
+  await page.getByRole('button',{name:'Check latest rates & availability'}).click();
+  await expect(pending).toBeVisible();
+  await expect(pending).toHaveAccessibleName('Continue as unpriced enquiry');
+  await page.getByLabel('Cut or preparation (optional)').fill('Small pieces');
+  await expect(pending).toBeHidden();
+  expect(await pending.getAttribute('href')).toBeNull();
+});

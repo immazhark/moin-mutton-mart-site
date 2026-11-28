@@ -83,6 +83,9 @@ async function accessibility(){
       await page.getByRole('dialog').waitFor();
       await scan('review');
       await page.screenshot({path:join(output,'review-390.png')});
+      // Re-check the destination in view, retain both reports and incomplete results.
+      await page.locator('.destination').first().scrollIntoViewIfNeeded();
+      await scan('review-destination');
       await page.getByRole('button',{name:'Check latest rates & availability'}).click();
       await page.getByRole('link',{name:'Continue as unpriced enquiry'}).waitFor();
       await scan('review-ready-unpriced');
