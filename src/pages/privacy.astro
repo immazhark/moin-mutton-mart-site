@@ -1,9 +1,10 @@
 ---
+import BrandIcon from '../components/BrandIcon.astro';
 import '../styles/global.css';
 import {canonicalUrl,callUrl,shop} from '../data/shop';
 ---
 <html lang="en">
-<head>
+<head><BrandIcon />
   <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="robots" content="noindex,nofollow"/><link rel="canonical" href={canonicalUrl('/privacy/')}/>
   <meta name="description" content="How Moin Mutton Mart handles your browser draft and WhatsApp request."/><title>Privacy · Moin Mutton Mart</title>
@@ -16,9 +17,9 @@ import {canonicalUrl,callUrl,shop} from '../data/shop';
     <section class="privacy-choice" aria-labelledby="choices">
       <h2 id="choices">Your choices</h2>
       <p>Clear the saved basket on this browser. This does not delete messages already sent to the shop.</p>
-      <button class="btn-secondary" type="button" data-clear-basket hidden>Clear saved basket</button>
+      <button class="btn-secondary" type="button" data-clear-basket disabled>Clear saved basket</button>
       <p role="status" data-clear-status></p>
-      <noscript><p>Remove this site’s stored data in your browser settings to clear the saved basket.</p></noscript>
+      <p class="privacy-fallback">Remove this site’s stored data in your browser settings if the clear button is unavailable.</p>
       <a href={callUrl}>Contact the shop about your information</a>
     </section>
     <section><h2>What stays on your device</h2>
@@ -47,7 +48,7 @@ import {canonicalUrl,callUrl,shop} from '../data/shop';
   const clear=document.querySelector<HTMLButtonElement>('[data-clear-basket]');
   const status=document.querySelector<HTMLElement>('[data-clear-status]');
   if(clear&&status){
-    clear.hidden=false;
+    clear.disabled=false;
     clear.addEventListener('click',()=>{
       try{localStorage.removeItem(STORAGE_KEY);status.textContent='Saved basket cleared on this browser.';}
       catch{status.textContent='Browser storage is unavailable. Clear this site’s stored data in your browser settings.';}

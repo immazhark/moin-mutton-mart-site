@@ -67,7 +67,7 @@ function unitHint(p:Product){
       <p class="rate" data-role="estimate" hidden></p>
       <div class="review-stage" data-stage="review"><Check size={18} aria-hidden="true" className="ready-check"/><strong data-role="review-state">Review your selection</strong></div>
       <p class="qualify" role="status" data-role="review-notice" hidden></p>
-      <a data-action="handoff" class="btn-primary whatsapp" target="_blank" rel="noopener noreferrer" hidden><MessageCircle size={20} aria-hidden="true"/> <span data-role="handoff-label"></span></a>
+      <a id="review-handoff" data-action="handoff" class="btn-primary whatsapp" target="_blank" rel="noopener noreferrer" hidden><MessageCircle size={20} aria-hidden="true"/> <span data-role="handoff-label">Continue on WhatsApp</span></a>
       <p data-role="long-link" tabindex="-1" class="qualify" role="alert" hidden>This request is too long for a WhatsApp link. Copy the unpriced request or call the shop.</p>
       <button data-action="check" type="button" class="btn-primary whatsapp" aria-disabled="false"><MessageCircle size={20} aria-hidden="true"/> <span data-role="check-label">Check latest rates &amp; availability</span></button>
       <p class="destination">Opens a chat with {shop.phoneDisplay}. You send the message yourself.</p>

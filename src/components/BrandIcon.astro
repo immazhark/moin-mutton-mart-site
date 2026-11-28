@@ -1,0 +1,7 @@
+---
+import {getImage} from 'astro:assets';
+import logo from '../assets/logo.png';
+// Generate a small, same-origin PNG from the approved logo, not a new brand mark.
+const icon=await getImage({src:logo,width:48,format:'png'});
+---
+<link rel="icon" type="image/png" href={icon.src}/>
