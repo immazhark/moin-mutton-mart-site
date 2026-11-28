@@ -84,12 +84,11 @@ main { max-width: 1120px; margin: 0 auto; }
 
 .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.75rem), 1fr)); gap: var(--s3); }
 .product-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); display: flex; flex-direction: column; min-width: 0; }
-.product-photo {
-  aspect-ratio: 2 / 1; min-height: 56px; padding: 8px; border-radius: calc(var(--r-md) - 1px) calc(var(--r-md) - 1px) 0 0; display: flex; flex-wrap: wrap; text-align: center; align-items: center; justify-content: center; gap: var(--s2);
-  background: #efe9ea; color: #7b5560; font-size: 0.8125rem;
-}
-.product-card[data-category='Chicken'] .product-photo { background: #f3eedd; color: #7a6526; }
-.product-card[data-category='Speciality cuts'] .product-photo { background: var(--green-tint); color: #2f6d51; }
+/* Text-first merchandise: approved photos can be introduced later without fake imagery. */
+.cut-category { font-size:.75rem; font-weight:650; line-height:1.35; color:var(--maroon); margin:0 0 var(--s1); }
+.product-card[data-category='Chicken'] .cut-category { color:#755a24; }
+.product-card[data-category='Speciality cuts'] .cut-category { color:var(--green); }
+.unit-amount { white-space:nowrap; font-variant-numeric:tabular-nums; }
 .product-body { padding: var(--s2); display: flex; flex-direction: column; flex: 1; }
 .product-body h2 { font-size: 1rem; line-height: 1.3; margin: 0 0 var(--s1); }
 .unit-hint { font-size: 0.875rem; color: var(--muted); margin: 0 0 var(--s1); }
@@ -239,3 +238,58 @@ main { max-width: 1120px; margin: 0 auto; }
 
 /* Native not-found recovery, no hydration or extra assets. */
 .missing-page{max-width:36rem;margin-block:clamp(2rem,8vw,5rem)}.missing-page h1{text-wrap:balance;margin-block:var(--s3)}.missing-label{font-size:.875rem;font-weight:650;color:var(--muted);margin:0}.missing-actions{display:grid;gap:var(--s2);margin-top:var(--s5)}.missing-actions a{display:flex;align-items:center;justify-content:center;min-height:48px;padding:8px 16px}
+
+/* Phase 8: Moin's counter, not a generic photo-card template. Keep the established palette. */
+.storefront .site-header{border-bottom:2px solid #a78746}
+.storefront .brand-text strong{letter-spacing:.005em}
+.storefront .brand-text small{line-height:1.35}
+.storefront .catalogue{padding-top:var(--s5);padding-bottom:var(--s6)}
+.counter-intro{min-width:0}
+.storefront .shop-head{align-items:flex-start;gap:var(--s2);margin-bottom:var(--s4)}
+.storefront .shop-head h1{font-family:Georgia,'Times New Roman',serif;font-weight:700;letter-spacing:-.035em;line-height:1.08;font-size:clamp(1.875rem,4vw,2.75rem);text-wrap:balance}
+.counter-instruction{margin:var(--s2) 0 0;color:var(--muted);font-size:.9375rem;line-height:1.45;max-width:42ch}
+.storefront .status{font-size:.8125rem;line-height:1.4;max-width:38ch}
+.storefront .categories{padding-block:var(--s3) var(--s4)}
+.storefront .categories button{border-radius:var(--r-sm);font-size:.875rem;padding-inline:12px}
+.storefront .product-grid{gap:var(--s2)}
+.storefront .product-card{border-radius:var(--r-md);transition:border-color 120ms,background-color 120ms}
+.storefront .product-card[data-selected='true']{border-color:var(--green);background:#fafffb}
+.storefront .product-body{padding:var(--s3);gap:0}
+.storefront .product-body h2{font-size:1.0625rem;line-height:1.25;margin-block:0 var(--s1);letter-spacing:-.015em;text-wrap:balance}
+.storefront .product-body .unit-hint{font-size:.875rem;margin-bottom:var(--s2)}
+.storefront .product-body .rate{margin:0 0 var(--s3);font-size:.875rem;font-weight:650;line-height:1.35}
+.availability{font-size:.8125rem;color:var(--muted);line-height:1.35;margin:0 0 var(--s2)}
+.product-card[data-restricted='true'] .availability{color:var(--maroon);font-weight:650}
+.storefront .add{font-size:.9375rem;min-height:48px}
+.storefront .stepper button:not(:disabled):active{background:#cfe5d7}
+.storefront .stepper button svg,.storefront .add svg{transition:transform 100ms ease-out}
+.storefront .stepper button:not(:disabled):active svg,.storefront .add:not(:disabled):active svg{transform:scale(.82)}
+.storefront .stepper output{font-size:.875rem;overflow-wrap:normal;white-space:nowrap}
+.quantity-guide{margin-block:var(--s5) 0;border-block:1px solid var(--line)}
+.quantity-guide summary{display:flex;align-items:center;gap:var(--s2);min-height:48px;padding:var(--s2) 0;cursor:pointer;color:var(--ink);font-weight:650;list-style:none}
+.quantity-guide summary::-webkit-details-marker{display:none}
+.quantity-guide summary span{flex:1;min-width:0}
+.guide-chevron{transition:transform 150ms ease-out}
+.quantity-guide[open] .guide-chevron{transform:rotate(90deg)}
+.guide-copy{font-size:.9375rem;color:var(--muted);padding:0 0 var(--s3);max-width:62ch}
+.guide-copy p{margin:0 0 var(--s2)}
+.guide-copy p:last-child{margin:0}
+.storefront .basket-bar{gap:var(--s2);padding:var(--s2) var(--s2) var(--s2) var(--s3);border-radius:var(--r-md)}
+.basket-text{display:grid;gap:0;line-height:1.2}
+.basket-text small{font-weight:400;font-size:.75rem;color:#e4f1e8}
+.storefront .basket-bar button{display:flex;align-items:center;justify-content:center;gap:var(--s1);font-size:.875rem}
+.review-stage{display:flex;align-items:center;gap:var(--s2);border-block-start:1px solid var(--line);padding-block:var(--s3) var(--s2);font-size:.9375rem;color:var(--ink)}
+.review-stage .ready-check{display:none}
+.review-stage[data-stage='ready']{color:var(--green)}
+.review-stage[data-stage='ready'] .ready-check{display:block;animation:ready-in 160ms ease-out both}
+@keyframes ready-in{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.storefront .sheet-head h2{font-family:Georgia,'Times New Roman',serif;font-size:1.5rem;letter-spacing:-.025em}
+.storefront .visit{border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;padding:var(--s4) 0}
+.storefront .visit h2{font-family:Georgia,'Times New Roman',serif;font-size:1.5rem;letter-spacing:-.02em}
+.storefront .site-footer nav{gap:var(--s4)}
+@media(min-width:640px){.storefront .shop-head{align-items:flex-end}.storefront .status{text-align:right}.storefront .product-grid{gap:var(--s3)}.storefront .product-body{padding:var(--s4)}}
+@media(max-width:375px){.storefront .product-body{padding:var(--s3)}.storefront .product-body h2{font-size:1.125rem}}
+@media(max-width:25rem){.storefront .basket-bar{flex-wrap:nowrap}.storefront .basket-bar button{flex:0 1 auto}}
+@media(max-width:20rem){.storefront .basket-bar{flex-wrap:wrap}.storefront .basket-bar button{flex:1 1 100%}}
+@media(prefers-reduced-motion:reduce){.review-stage .ready-check,.guide-chevron,.storefront .stepper button svg,.storefront .add svg{animation:none!important;transition:none!important;transform:none!important}.quantity-guide[open] .guide-chevron{transform:rotate(90deg)!important}}
+@media(forced-colors:active){.storefront .product-card[data-selected='true']{border:2px solid Highlight}.review-stage[data-stage='ready']{color:CanvasText}}
