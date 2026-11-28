@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-if [[ "${FIRESTORE_EMULATOR_HOST:-}" != "127.0.0.1:8088" ]]; then
+if [[ "${FIRESTORE_EMULATOR_HOST:-}" != "127.0.0.1:8088" || "${FIREBASE_AUTH_EMULATOR_HOST:-}" != "127.0.0.1:9099" ]]; then
   echo "Refusing a non-local Firestore endpoint" >&2
   exit 1
 fi
@@ -10,6 +10,7 @@ trap 'rm -rf -- "$qa"' EXIT
 cp -R "$root/src" "$root/public" "$root/astro.config.mjs" "$root/tsconfig.json" "$root/package.json" "$qa/"
 ln -s "$root/node_modules" "$qa/node_modules"
 cp "$root/tests/browser-emulator/CatalogueHarness.tsx.template" "$qa/src/components/CatalogueHarness.tsx"
+cp "$root/tests/browser-emulator/OwnerHarness.tsx.template" "$qa/src/components/OwnerHarness.tsx"
 # These synthetic, test-only charging units exist only in the disposable build.
 # Never rewrite the real product metadata or publish this build.
 node --input-type=module - "$qa" <<'NODE'
@@ -22,6 +23,7 @@ const edit=(path,from,to)=>{
   writeFileSync(file,input.replace(from,to));
 };
 edit('src/pages/index.astro',"import Catalogue from '../components/Catalogue';","import Catalogue from '../components/CatalogueHarness';");
+edit('src/pages/admin/index.astro',"import OwnerConsole from '../../components/OwnerConsole';","import OwnerConsole from '../../components/OwnerHarness';");
 edit('src/data/products.ts','pricingBasis: null,','pricingBasis: unit === \'g\' ? \'kg\' : unit,');
 NODE
 (

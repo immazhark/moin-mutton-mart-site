@@ -1,0 +1,35 @@
+import {useEffect,useState} from 'react';
+import {browserSessionPersistence,initializeAuth,connectAuthEmulator,createUserWithEmailAndPassword} from 'firebase/auth';
+import {connectFirestoreEmulator} from 'firebase/firestore';
+import {getFirebaseServices} from '../lib/catalogue/firebase-browser';
+import {getFirebaseApp} from '../lib/catalogue/firebase-public';
+import OwnerConsole from './OwnerConsole';
+
+/** Temporary QA-only component. Real owner route never imports this template. */
+export default function OwnerHarness(){
+  const [ready,setReady]=useState(false);
+  const [error,setError]=useState(false);
+  useEffect(()=>{
+    if(window.location.hostname!=='127.0.0.1'||import.meta.env.PUBLIC_FIREBASE_PROJECT_ID!=='demo-moin-security'){setError(true);return;}
+    try{
+      const services=getFirebaseServices();
+      const publicApp=getFirebaseApp('public');
+      if(!services||!publicApp||services.auth.app===publicApp)throw Error('App separation failed');
+      connectAuthEmulator(services.auth,'http://127.0.0.1:9099',{disableWarnings:true});
+      connectFirestoreEmulator(services.db,'127.0.0.1',8088);
+      const publicAuth=initializeAuth(publicApp,{persistence:browserSessionPersistence});
+      connectAuthEmulator(publicAuth,'http://127.0.0.1:9099',{disableWarnings:true});
+      const probe=()=>void Promise.all([services.auth.authStateReady(),publicAuth.authStateReady()]).then(()=>{
+        document.documentElement.dataset.qaPublicUser=publicAuth.currentUser?'present':'absent';
+        document.documentElement.dataset.qaOwnerUser=services.auth.currentUser?.uid??'absent';
+      }).catch(()=>setError(true));
+      const create=()=>void createUserWithEmailAndPassword(services.auth,'fixture-'+crypto.randomUUID()+'@example.invalid',crypto.randomUUID()).then(probe).catch(()=>setError(true));
+      window.addEventListener('qa-create-owner',create);
+      window.addEventListener('qa-probe-auth',probe);
+      probe();setReady(true);
+      return()=>{window.removeEventListener('qa-create-owner',create);window.removeEventListener('qa-probe-auth',probe);};
+    }catch{setError(true);}
+  },[]);
+  if(error)return <p role="alert">Isolated owner emulator harness unavailable.</p>;
+  return ready?<OwnerConsole/>:<p>Starting isolated owner emulator harness…</p>;
+}

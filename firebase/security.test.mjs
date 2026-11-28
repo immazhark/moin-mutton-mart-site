@@ -178,3 +178,25 @@ test('every offer in both validation partitions rejects invalid prices', async (
   }
   await assertSucceeds(publish(db));
 });
+
+test('active membership must be a literal boolean and never grants collection or private writes', async () => {
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'admins', 'malformed'), { active: 'true' });
+  });
+  await assertFails(publish(env.authenticatedContext('malformed').firestore()));
+  const db = owner();
+  await assertFails(getDocs(collection(db, 'audit')));
+  await assertFails(getDoc(doc(db, 'private', 'secret')));
+  await assertFails(setDoc(doc(db, 'public', 'another'), fixture()));
+  await assertFails(setDoc(doc(db, 'private', 'another'), { active: true }));
+  await assertSucceeds(publish(db));
+});
+test('an existing operation ID cannot be reused with a newer revision', async () => {
+  const db = owner();
+  await assertSucceeds(publish(db));
+  const value = next('op-1');
+  value.revision = 3;
+  await assertFails(publish(db, value));
+  const after = (await assertSucceeds(getDoc(catalogue(db)))).data();
+  assert.equal(after.revision, 2);
+});
