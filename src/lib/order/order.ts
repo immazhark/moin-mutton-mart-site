@@ -126,6 +126,7 @@ export function formatRequest(
   selections: Selection[],
   fulfilment: Fulfilment,
   orderNote: string,
+  estimate?: Estimate,
 ): string {
   if (!selections.length) throw new Error('Empty request');
   const items = selections.map((s, i) => {
@@ -139,7 +140,9 @@ export function formatRequest(
     `*ITEMS* (${selections.length})\n${items.join('\n\n')}`,
     `*FULFILMENT*\n${FULFILMENT_LINE[fulfilment]}`,
     ...(note ? [`*NOTE*\n${note}`] : []),
-    '*PRICE*\nRate aur total confirm kar dijiye.',
+    estimate?.kind === 'complete'
+      ? '*PRICE*\nAndaza: '+new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(estimate.totalPaise/100)+'. Final rate aur total confirm kar dijiye.'
+      : '*PRICE*\nRate aur total confirm kar dijiye.',
     'Availability, final weight, total aur timing confirm kar dijiye.',
   ].join('\n\n');
 }

@@ -35,3 +35,7 @@ Prior local verification: 36 domain cases passed in a Node assertion harness aft
 Infrastructure provisioned according to user handover: Cloudflare Pages and Firebase Spark Google Auth/Firestore Standard Mumbai, deny-all until independently verified. Customer and owner UI English; WhatsApp Roman-script Hinglish. Private owner identity supplied; do not publish it or ask again. Price visibility is presentation, not confidentiality under single public document design. Stock ceiling provisional. No production writes.
 
 Next: actual Firebase Timestamp adapter, default-deny Rules, atomic audit/conflict/idempotency tests for all 13 offers; owner editor, live catalogue freshness, approved content, SEO/PWA, accessibility and mobile verification.
+
+## 28 November — current phase
+
+See docs/HANDOFF.md and docs/qa/DESIGN-IMPLEMENTATION.md for current status and exact evidence. The earlier entries are historical; do not treat their pending lists as the current branch state.

@@ -22,7 +22,10 @@ for (const width of [320, 360, 390, 430, 1280]) {
     await expect(sheet.getByText('1 kg', { exact: true })).toBeVisible();
     await sheet.getByLabel('Cut or preparation (optional)').fill('Medium curry pieces');
     await sheet.getByRole('button', { name: 'Pickup', exact: true }).click();
-    const url = await sheet.getByRole('link', { name: 'Continue on WhatsApp' }).getAttribute('href');
+    await sheet.getByRole('button',{name:'Check latest rates & availability'}).click();
+    const fallback=sheet.getByRole('link',{name:'Continue as unpriced enquiry'});
+    await expect(fallback).toBeVisible();
+    const url = await fallback.getAttribute('href');
     expect(new URL(url!).pathname).toBe('/918143730054');
     const text = new URL(url!).searchParams.get('text')!;
     expect(text).toContain('Cut: Medium curry pieces');
@@ -101,4 +104,32 @@ test('expired basket is removed rather than restored', async ({ page }) => {
   await page.goto('/');
   await expect.poll(() => page.evaluate(() => localStorage.getItem('moin-request-v2'))).toBeNull();
   await expect(page.getByRole('button', { name: 'Review request' })).toHaveCount(0);
+});
+
+test('editing invalidates a previously checked unpriced handoff',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('button',{name:'Add Mutton with bone',exact:true}).click();
+  await page.getByRole('button',{name:'Review request'}).click();
+  const sheet=page.getByRole('dialog');
+  await sheet.getByRole('button',{name:'Check latest rates & availability'}).click();
+  await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toBeVisible();
+  await sheet.getByLabel('Cut or preparation (optional)').fill('Thin slices');
+  await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toHaveCount(0);
+  await sheet.getByLabel('Cut or preparation (optional)').fill('');
+  await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toHaveCount(0);
+  await sheet.getByRole('button',{name:'Check latest rates & availability'}).click();
+  await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toBeVisible();
+});
+
+test('handoff approval expires without polling',async({page})=>{
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Add Mutton with bone',exact:true}).click();
+  await page.getByRole('button',{name:'Review request'}).click();
+  const sheet=page.getByRole('dialog');
+  await sheet.getByRole('button',{name:'Check latest rates & availability'}).click();
+  await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toBeVisible();
+  await page.clock.fastForward(15001);
+  await expect(sheet.getByRole('link',{name:'Continue as unpriced enquiry'})).toHaveCount(0);
+  await expect(sheet.getByRole('button',{name:'Check latest rates & availability'})).toBeEnabled();
 });

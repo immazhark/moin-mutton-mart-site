@@ -1,12 +1,34 @@
 import { Search, ShoppingBasket } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { categories, products } from '../data/products';
 import type { Selection } from '../lib/order/order';
+import {CatalogueSession} from '../lib/catalogue/freshness';
+import {assessQuantity,displayedRate} from '../lib/catalogue/contract';
 import { RETENTION_MS, STORAGE_KEY, decodeDraft, encodeDraft } from '../lib/order/storage';
 import ProductCard from './ProductCard';
 import ReviewSheet from './ReviewSheet';
 
 export default function Catalogue() {
+  const [session] = useState(() => new CatalogueSession(async () => {
+    if(!import.meta.env.PUBLIC_FIREBASE_PROJECT_ID)throw Error('Live catalogue is not configured');
+    const {getPublicFirestore} = await import('../lib/catalogue/firebase-public');
+    const db=getPublicFirestore();
+    if(!db)throw Error('Live catalogue is not configured');
+    const {getCatalogueFromServer}=await import('../lib/catalogue/firestore');
+    return getCatalogueFromServer(db,products);
+  }));
+  const live = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
+  const current = live.kind === 'ready' ? live.catalogue : null;
+  const known = session.getLastKnownCatalogue();
+  useEffect(() => {
+    void session.refresh();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && session.needsRefresh()) void session.refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [session]);
+
   const [category, setCategory] = useState<(typeof categories)[number]>('All');
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<Selection[]>([]);
@@ -59,6 +81,8 @@ export default function Catalogue() {
       const quantity = (old?.quantity ?? 0) + delta * p.step;
       if (quantity <= 0) return prev.filter((s) => s.productId !== id);
       if (quantity > p.max) return prev;
+      const latest = session.getLastKnownCatalogue();
+      if (delta > 0 && latest && assessQuantity(latest,p,quantity).kind === 'blocked') return prev;
       return old ? prev.map((s) => (s.productId === id ? { ...s, quantity } : s)) : [...prev, { productId: id, quantity, note: '' }];
     });
   }
@@ -132,7 +156,7 @@ export default function Catalogue() {
     <section id="catalogue" className="catalogue" aria-labelledby="shop-title">
       <div className="shop-head">
         <h1 id="shop-title">Choose your cuts</h1>
-        <p className="status">Rates confirmed by the shop</p>
+        <p className="status" role="status">{live.kind === 'loading' ? 'Checking current availability…' : live.kind === 'unavailable' ? 'Live rates unavailable · ask the shop' : current?.acceptingRequests ? 'Current rates and stock · subject to confirmation' : 'The shop is not taking requests right now'}</p>
       </div>
 
       <label className="search">
@@ -151,9 +175,18 @@ export default function Catalogue() {
 
       {visible.length ? (
         <div className="product-grid">
-          {visible.map((p) => (
-            <ProductCard key={p.id} product={p} quantity={items.find((s) => s.productId === p.id)?.quantity} onChange={change} />
-          ))}
+          {visible.map((p) => {
+            const quantity=items.find(s=>s.productId===p.id)?.quantity;
+            const next=known?assessQuantity(known,p,(quantity??0)+p.step):null;
+            const rate=current&&p.pricingBasis?displayedRate(current,p.id):null;
+            const offer=current?.offers[p.id];
+            const blocked=next?.kind==='blocked';
+            const availabilityText=!current?(blocked?'Previously restricted · check with shop':'Confirm with shop'):!current.acceptingRequests?'Requests paused':!offer?.enabled?'Not listed today':offer.availability==='sold_out'||offer.stockQuantity===0?'Sold out':offer.availability==='ask'||offer.stockQuantity===null?'Confirm availability':blocked?'Quantity limit':'Available';
+            return <ProductCard key={p.id} product={p} quantity={quantity} onChange={change}
+              canIncrease={!blocked}
+              rateText={rate?.kind==='visible'&&p.pricingBasis?new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(rate.pricePaise/100)+' / '+p.pricingBasis:'Ask for today’s rate'}
+              availabilityText={availabilityText}/>;
+          })}
         </div>
       ) : (
         <p className="no-results">Nothing in the range matches “{query}”. Try another word or call the shop.</p>
@@ -175,6 +208,9 @@ export default function Catalogue() {
         dialogRef={dialog}
         products={products}
         items={items}
+        live={live}
+        known={known}
+        refresh={session.refresh.bind(session)}
         onChange={change}
         onRemove={(id) => setItems((prev) => prev.filter((s) => s.productId !== id))}
         onNote={(id, note) => setItems((prev) => prev.map((s) => (s.productId === id ? { ...s, note } : s)))}

@@ -12,9 +12,12 @@ interface Props {
   product: Product;
   quantity: number | undefined;
   onChange: (id: string, delta: -1 | 1) => void;
+  canIncrease: boolean;
+  rateText: string;
+  availabilityText: string;
 }
 
-export default function ProductCard({ product: p, quantity, onChange }: Props) {
+export default function ProductCard({ product: p, quantity, onChange, canIncrease, rateText, availabilityText }: Props) {
   const Icon = p.category === 'Chicken' ? Drumstick : Beef;
   return (
     <article className="product-card" data-category={p.category}>
@@ -26,11 +29,11 @@ export default function ProductCard({ product: p, quantity, onChange }: Props) {
       <div className="product-body">
         <h3>{p.name}</h3>
         <p className="unit-hint">{unitHint(p)}</p>
-        <p className="rate">Ask for today’s rate</p>
+        <p className="rate">{rateText}</p><p className="unit-hint">{availabilityText}</p>
         {quantity ? (
-          <Stepper product={p} quantity={quantity} onChange={(d) => onChange(p.id, d)} />
+          <Stepper product={p} quantity={quantity} canIncrease={canIncrease} onChange={(d) => onChange(p.id, d)} />
         ) : (
-          <button type="button" className="add" aria-label={`Add ${p.name}`} onClick={() => onChange(p.id, 1)}>
+          <button type="button" className="add" aria-label={`Add ${p.name}`} disabled={!canIncrease} onClick={() => onChange(p.id, 1)}>
             <Plus size={18} aria-hidden="true" /> Add
           </button>
         )}
