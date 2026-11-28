@@ -104,7 +104,7 @@ export default function ReviewSheet({ dialogRef, products, items, live, known, r
     }finally{busy.current=false;setChecking(false);}
   }
 
-  useLayoutEffect(() => { copySession.setMessage(message); }, [copySession, message]);
+  useLayoutEffect(() => { copySession.setMessage(blocked ? '' : message); }, [copySession, message, blocked]);
 
   function copy() {
     if(!blocked)void copySession.copy((text) => navigator.clipboard.writeText(text));
@@ -225,10 +225,10 @@ export default function ReviewSheet({ dialogRef, products, items, live, known, r
           <p className="destination">Copy request always copies an unpriced enquiry, not an estimate.</p>
           <p role="status" aria-label="Clipboard status" className="copy-status">
             {copying && 'Copy in progress. If you edit the request, copy it again when ready.'}
-            {copyState === 'done' && 'Copied. Paste it into your chat with the shop.'}
-            {copyState === 'failed' && 'Copy is unavailable here. Select the text below instead.'}
+            {!blocked && copyState === 'done' && 'Copied. Paste it into your chat with the shop.'}
+            {!blocked && copyState === 'failed' && 'Copy is unavailable here. Select the text below instead.'}
           </p>
-          {copyState === 'failed' && <textarea className="copy-fallback" aria-label="Request text" readOnly value={message} />}
+          {!blocked && copyState === 'failed' && <textarea className="copy-fallback" aria-label="Request text" readOnly value={message} />}
         </>
       )}
     </dialog>

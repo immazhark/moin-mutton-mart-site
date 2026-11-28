@@ -29,6 +29,7 @@ test('configured catalogue reviews changed rates, preserves blocked stock throug
     if(url.hostname==='127.0.0.1'&&['4322','8088'].includes(url.port))return route.continue();
     external.push(url.origin);return route.abort();
   });
+  await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:()=>Promise.reject(Error('Synthetic clipboard denial'))}}));
   await seed(1,100000);
   await page.setViewportSize({width:360,height:844});
   await page.goto('/');
@@ -60,10 +61,13 @@ test('configured catalogue reviews changed rates, preserves blocked stock throug
 
   await seed(3,120000,'sold_out');
   await sheet.getByLabel('Cut or preparation (optional)').fill('Thin slices');
+  await sheet.getByRole('button',{name:'Copy request'}).click();
+  await expect(sheet.getByRole('textbox',{name:'Request text'})).toBeVisible();
   await check.click();
   await expect(sheet.getByText('Some selections are not currently requestable.',{exact:false})).toBeVisible();
   await expect(continueLink).toHaveCount(0);
   await expect(sheet.getByRole('button',{name:'Copy request'})).toBeDisabled();
+  await expect(sheet.getByRole('textbox',{name:'Request text'})).toHaveCount(0);
   await expect(sheet.getByRole('button',{name:'Increase Mutton with bone'})).toBeDisabled();
   await page.evaluate(()=>window.dispatchEvent(new CustomEvent('qa-emulator-network',{detail:'offline'})));
   await expect(page.locator('html')).toHaveAttribute('data-qa-network','offline');
