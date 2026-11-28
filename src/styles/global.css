@@ -236,3 +236,6 @@ main { max-width: 1120px; margin: 0 auto; }
 .order-guide details p { padding: 0 0 var(--s3); margin: 0; line-height: 1.6; }
 
 .privacy-page{max-width:640px}.privacy-page h1{max-width:22ch;text-wrap:balance}.privacy-page section{margin-block:var(--s5)}.privacy-page h2{font-size:1.25rem;line-height:1.3;margin:0 0 var(--s2)}.privacy-page p{margin:0 0 var(--s3)}.privacy-choice{padding:var(--s4);border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface)}.privacy-choice button{width:100%;padding:8px 12px}.privacy-choice button[hidden]{display:none!important}.privacy-choice [role=status]:empty{margin:0}.privacy-choice a{display:flex;align-items:center;color:var(--green);font-weight:650;margin-top:var(--s2)}
+
+/* Native not-found recovery, no hydration or extra assets. */
+.missing-page{max-width:36rem;margin-block:clamp(2rem,8vw,5rem)}.missing-page h1{text-wrap:balance;margin-block:var(--s3)}.missing-label{font-size:.875rem;font-weight:650;color:var(--muted);margin:0}.missing-actions{display:grid;gap:var(--s2);margin-top:var(--s5)}.missing-actions a{display:flex;align-items:center;justify-content:center;min-height:48px;padding:8px 16px}

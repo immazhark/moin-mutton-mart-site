@@ -1,7 +1,5 @@
 import {initializeApp,getApps,type FirebaseOptions,type FirebaseApp} from 'firebase/app';
-import {getFirestore,type Firestore} from 'firebase/firestore';
 import {getPublicConfig} from './public-config';
-export {validatePublicConfig,type PublicConfig} from './public-config';
 export function getFirebaseApp(purpose:'public'|'owner'='public'):FirebaseApp|null {
   const config=getPublicConfig();
   if(!config)return null;
@@ -16,8 +14,4 @@ export function getFirebaseApp(purpose:'public'|'owner'='public'):FirebaseApp|nu
     return existing;
   }
   return initializeApp(options,name);
-}
-export function getPublicFirestore():Firestore|null {
-  const app=getFirebaseApp();
-  return app?getFirestore(app):null;
 }

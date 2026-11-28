@@ -9,6 +9,11 @@ export interface Draft {
   startedAt: number;
 }
 
+function exact(value:unknown,keys:readonly string[]):value is Record<string,unknown>{
+  return typeof value==='object'&&value!==null&&!Array.isArray(value)&&
+    Object.getPrototypeOf(value)===Object.prototype&&Object.keys(value).length===keys.length&&keys.every(k=>Object.hasOwn(value,k));
+}
+
 /** Only product ids and quantities are stored: no notes, contact details, prices or identity. */
 export function encodeDraft(items: Selection[], startedAt: number): string {
   return JSON.stringify({
@@ -21,10 +26,11 @@ export function encodeDraft(items: Selection[], startedAt: number): string {
 export function decodeDraft(raw: string | null, products: readonly Product[], now = Date.now()): Draft | null {
   try {
     if (!raw || raw.length > 10_000) return null;
-    const v = JSON.parse(raw);
+    const v:unknown = JSON.parse(raw);
+    if(!exact(v,['version','startedAt','items'])||!Number.isSafeInteger(now)||now<0)return null;
     if (
       v.version !== 2 ||
-      !Number.isSafeInteger(v.startedAt) ||
+      typeof v.startedAt!=='number'||!Number.isSafeInteger(v.startedAt)||v.startedAt<0 ||
       v.startedAt > now ||
       now - v.startedAt > RETENTION_MS ||
       !Array.isArray(v.items) ||
@@ -34,7 +40,8 @@ export function decodeDraft(raw: string | null, products: readonly Product[], no
       return null;
     }
     const seen = new Set<string>();
-    const items = v.items.map((i: { productId: string; quantity: number }) => {
+    const items = v.items.map((i:unknown) => {
+      if(!exact(i,['productId','quantity'])||typeof i.productId!=='string'||typeof i.quantity!=='number')throw Error('Invalid saved item');
       const s: Selection = { productId: i.productId, quantity: i.quantity, note: '' };
       validateSelection(products, s);
       if (seen.has(s.productId)) throw new Error('Duplicate');

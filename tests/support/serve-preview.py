@@ -38,6 +38,16 @@ class Handler(SimpleHTTPRequestHandler):
         if Path(self.translate_path(self.path)).resolve() == dist / "_headers":
             self.send_error(404)
             return None
+        target = Path(self.translate_path(self.path))
+        # Model the custom static Pages 404 for missing resources, preserving HTTP
+        # status. Never emulate the Pages SPA fallback with a successful response.
+        if not target.exists() and (dist / "404.html").is_file():
+            body = (dist / "404.html").open("rb")
+            self.send_response(404)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str((dist / "404.html").stat().st_size))
+            self.end_headers()
+            return body
         return super().send_head()
 
     def end_headers(self):

@@ -27,7 +27,18 @@ export function mountCounter(root:HTMLElement){
   const session=new CatalogueSession(()=>loadPublicCatalogue(products));
   const copy=new CopySession();
   const indexed=new Map(products.map(p=>[p.id,p]));
-  const cards=new Map([...root.querySelectorAll<HTMLElement>('[data-product]')].map(el=>[el.dataset.product!,el]));
+  const cards=new Map<string,HTMLElement>();
+  for(const el of root.querySelectorAll<HTMLElement>('.product-card[data-product]')){
+    const id=el.dataset.product;
+    if(!id||!indexed.has(id)||cards.has(id))throw Error('Invalid counter product markup');
+    cards.set(id,el);
+  }
+  if(cards.size!==products.length)throw Error('Incomplete counter product markup');
+  function getCard(id:string):HTMLElement{
+    const card=cards.get(id);
+    if(!card)throw Error('Missing counter product '+id);
+    return card;
+  }
   const lines=new Map<string,HTMLElement>();
   const otherOpen=new Set<string>();
   const search=role<HTMLInputElement>(root,'search');
@@ -69,7 +80,10 @@ export function mountCounter(root:HTMLElement){
   const selection=(id:string)=>items.find(s=>s.productId===id);
   const blocked=()=>{const value=known();return !!value&&reviewChanges(value,value,products,items).kind==='blocked';};
   const message=()=>items.length?formatRequest(products,items,fulfilment,orderNote.value):'';
-  const canIncrease=(p:Product,q:number)=>q+p.step<=p.max&&(!known()||assessQuantity(known()!,p,q+p.step).kind!=='blocked');
+  const canIncrease=(p:Product,q:number)=>{
+    const last=known();
+    return q+p.step<=p.max&&(!last||assessQuantity(last,p,q+p.step).kind!=='blocked');
+  };
 
   function persist(){
     try{
@@ -97,7 +111,7 @@ export function mountCounter(root:HTMLElement){
     let visible=0;
     for(const p of products){
       const match=(category==='All'||p.category===category)&&(!q||p.name.toLowerCase().includes(q));
-      show(cards.get(p.id)!,match);
+      show(getCard(p.id),match);
       if(match)visible++;
     }
     for(const el of root.querySelectorAll<HTMLButtonElement>('[data-category-filter]'))el.setAttribute('aria-pressed',String(el.dataset.categoryFilter===category));
@@ -113,7 +127,7 @@ export function mountCounter(root:HTMLElement){
     const live=session.getSnapshot(),catalogue=current(),last=known();
     text(status,live.kind==='loading'?'Checking current availability…':live.kind==='unavailable'?'Live rates unavailable · ask the shop':catalogue?.acceptingRequests?'Current rates and stock · subject to confirmation':'The shop is not taking requests right now');
     for(const p of products){
-      const card=cards.get(p.id)!,q=selection(p.id)?.quantity??0;
+      const card=getCard(p.id),q=selection(p.id)?.quantity??0;
       const add=node<HTMLButtonElement>(card,'.add'),stepper=node(card,'.stepper');
       const active=document.activeElement;
       const switchToStepper=q>0&&!add.hidden&&active===add;
@@ -134,7 +148,9 @@ export function mountCounter(root:HTMLElement){
     text(count,items.length+' '+(items.length===1?'item':'items'));
   }
   function newLine(p:Product){
-    const line=template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+    const source=template.content.firstElementChild;
+    if(!(source instanceof HTMLElement))throw Error('Missing review line template');
+    const line=source.cloneNode(true) as HTMLElement;
     line.dataset.product=p.id;
     text(node(line,'h3'),p.name);
     button(line,'remove').setAttribute('aria-label','Remove '+p.name);
@@ -163,7 +179,8 @@ export function mountCounter(root:HTMLElement){
     show(empty,items.length===0);show(review,items.length>0);
     const catalogue=current(),last=known();
     for(const s of items){
-      const p=indexed.get(s.productId)!;
+      const p=indexed.get(s.productId);
+      if(!p)throw Error('Invalid selection product');
       const line=lines.get(p.id)??newLine(p);
       renderStepper(node(line,'.stepper'),p,s.quantity);
       const rate=catalogue&&p.pricingBasis?displayedRate(catalogue,p.id):null;
@@ -297,7 +314,7 @@ export function mountCounter(root:HTMLElement){
         if(!grant||grant.snapshot!==session.getSnapshot()||blocked()||Date.now()-grant.at>HOLD_MS||Date.now()<grant.at){event.preventDefault();void checkLatest();}
         break;
       case 'cut':if(id){const s=selection(id);if(s&&el.dataset.cut!==undefined){s.note=s.note===el.dataset.cut?'':el.dataset.cut;edited();renderLines();}}break;
-      case 'other':if(id){otherOpen.add(id);renderLines();role<HTMLInputElement>(lines.get(id)!,'cut-input').focus();}break;
+      case 'other':if(id){otherOpen.add(id);renderLines();const line=lines.get(id);if(line)role<HTMLInputElement>(line,'cut-input').focus();}break;
     }
   });
   search.addEventListener('input',filter);
