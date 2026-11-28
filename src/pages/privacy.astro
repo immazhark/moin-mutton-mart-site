@@ -19,7 +19,7 @@ import {canonicalUrl,callUrl,shop} from '../data/shop';
       <p>Clear the saved basket on this browser. This does not delete messages already sent to the shop.</p>
       <button class="btn-secondary" type="button" data-clear-basket disabled>Clear saved basket</button>
       <p role="status" data-clear-status></p>
-      <noscript><p>Remove this site’s stored data in your browser settings to clear the saved basket.</p></noscript>
+      <p class="privacy-fallback">Remove this site’s stored data in your browser settings if the clear button is unavailable.</p>
       <a href={callUrl}>Contact the shop about your information</a>
     </section>
     <section><h2>What stays on your device</h2>
