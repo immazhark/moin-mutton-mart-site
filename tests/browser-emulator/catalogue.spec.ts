@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+import {measureCounter} from '../support/payload';
 import {initializeTestEnvironment,type RulesTestEnvironment} from '@firebase/rules-unit-testing';
 import {doc,setDoc,Timestamp} from 'firebase/firestore';
 import {readFileSync} from 'node:fs';
@@ -44,6 +45,8 @@ test('configured catalogue reviews changed rates, preserves blocked stock throug
   await page.setViewportSize({width:360,height:844});
   await page.goto('/');
   await expect(page.getByText('Current rates and stock · subject to confirmation')).toBeVisible({timeout:15000});
+  await page.waitForLoadState('networkidle');
+  await measureCounter(page);
   await page.getByRole('button',{name:'Add Mutton with bone',exact:true}).click();
   await page.getByRole('button',{name:'Review request'}).click();
   const sheet=page.getByRole('dialog');
