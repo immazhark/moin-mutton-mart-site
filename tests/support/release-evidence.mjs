@@ -45,6 +45,9 @@ async function laboratory(){
       const metric=id=>report.audits[id]?.numericValue??null;
       const summary={route:name,mode,version:report.lighthouseVersion,scores:Object.fromEntries(Object.entries(report.categories).map(([key,value])=>[key,value.score===null?null:Math.round(value.score*100)])),metrics:{lcpMs:metric('largest-contentful-paint'),cls:metric('cumulative-layout-shift'),tbtMs:metric('total-blocking-time'),fcpMs:metric('first-contentful-paint'),serverResponseMs:metric('server-response-time'),inpMs:null},failedAudits:Object.values(report.audits).filter(x=>x.score!==null&&x.score<1&&x.scoreDisplayMode!=='informative').map(x=>({id:x.id,score:x.score}))};
       print('LIGHTHOUSE_RESULT',summary);
+      // Preserve the audit's actual diagnostic text; do not hide report-only CSP or other console findings.
+      const diagnostics=Object.fromEntries(['errors-in-console','inspector-issues'].map(id=>[id,(report.audits[id]?.details?.items??[]).slice(0,12)]));
+      print('LIGHTHOUSE_DIAGNOSTICS',{route:name,mode,diagnostics});
     }catch(error){issue(name,error);}
   }
 }
@@ -84,8 +87,11 @@ async function accessibility(){
       await scan('review');
       await page.screenshot({path:join(output,'review-390.png')});
       // Re-check the destination in view, retain both reports and incomplete results.
-      await page.locator('.destination').first().scrollIntoViewIfNeeded();
+      await page.locator('.destination').last().scrollIntoViewIfNeeded();
       await scan('review-destination');
+      const contrast=await page.locator('.destination').evaluateAll(nodes=>nodes.map(el=>{const foreground=getComputedStyle(el).color;const backgrounds=[];for(let n=el;n;n=n.parentElement){const css=getComputedStyle(n);backgrounds.push({tag:n.tagName,color:css.backgroundColor,image:css.backgroundImage,opacity:css.opacity});if(css.backgroundColor!=='rgba(0, 0, 0, 0)'&&css.backgroundColor!=='transparent')break;}return {foreground,backgrounds};}));
+      print('REVIEW_CONTRAST_EVIDENCE',contrast);
+      write('review-destination-contrast.json',contrast);
       await page.getByRole('button',{name:'Check latest rates & availability'}).click();
       await page.getByRole('link',{name:'Continue as unpriced enquiry'}).waitFor();
       await scan('review-ready-unpriced');
