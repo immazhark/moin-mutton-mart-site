@@ -36,7 +36,7 @@ async function laboratory(){
     try{
       const destination=join(output,name+'.json');
       const args=[origin+path,'--quiet','--output=json','--output-path='+destination,
-        '--chrome-flags='+flags.map(flag=>flag.includes(' ')?'"'+flag+'"':flag).join(' '),
+        '--chrome-flags='+['--headless=new',...flags].map(flag=>flag.includes(' ')?'"'+flag+'"':flag).join(' '),
         '--only-categories=performance,accessibility,best-practices,seo'];
       if(mode==='desktop')args.push('--preset=desktop');
       execFileSync(join(tools,'node_modules','.bin','lighthouse'),args,{stdio:'inherit',timeout:120000,env:{...process.env,CHROME_PATH:chrome}});
