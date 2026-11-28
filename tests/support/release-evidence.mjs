@@ -1,4 +1,4 @@
-import {chromium} from 'playwright';
+import {chromium} from '@playwright/test';
 import {createRequire} from 'node:module';
 import {mkdirSync,writeFileSync,readFileSync,readdirSync,lstatSync} from 'node:fs';
 import {join,relative,isAbsolute} from 'node:path';

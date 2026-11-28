@@ -47,7 +47,7 @@ jobs:
           fi
           npm audit --prefix "$tools" --audit-level=high
           echo "MOIN_EVIDENCE_TOOLS=$tools" >> "$GITHUB_ENV"
-          echo "CHROME_PATH=$(node --input-type=module -e "import {chromium} from 'playwright'; console.log(chromium.executablePath())")" >> "$GITHUB_ENV"
+          echo "CHROME_PATH=$(node --input-type=module -e "import {chromium} from '@playwright/test'; console.log(chromium.executablePath())")" >> "$GITHUB_ENV"
       - name: Capture laboratory evidence (not a release pass)
         run: |
           export MOIN_EVIDENCE_DIR="$RUNNER_TEMP/moin-evidence-$MODE"
