@@ -227,21 +227,23 @@ export function mountCounter(root:HTMLElement){
   }
   function begin(){
     if(dialog.open||closing||!items.length)return;
+    revoke();notice='';
     render();dialog.showModal();close.focus();document.body.classList.add('sheet-open');openEpoch++;
     try{if(!history.state?.moinReview)history.pushState({...history.state,moinReview:true},'');}catch{/* Native close remains usable. */}
   }
   function requestClose(){
     if(!dialog.open||closing)return;
+    openEpoch++;revoke();notice='';renderAction();
     if(history.state?.moinReview){closing=true;history.back();}
     else dialog.close();
   }
   function syncHistory(){
     closing=false;
     if(history.state?.moinReview&&items.length){
-      if(!dialog.open){render();dialog.showModal();close.focus();openEpoch++;}
+      if(!dialog.open){revoke();notice='';render();dialog.showModal();close.focus();openEpoch++;}
       document.body.classList.add('sheet-open');
     }else{
-      if(dialog.open)dialog.close();
+      if(dialog.open){openEpoch++;revoke();notice='';renderAction();dialog.close();}
       document.body.classList.remove('sheet-open');
       if(history.state?.moinReview){const {moinReview:_marker,...state}=history.state;history.replaceState(state,'');}
     }
