@@ -1,3 +1,6 @@
 # Claude Code
 
 Follow [AGENTS.md](AGENTS.md). Start with README.md, docs/ARCHITECTURE.md, docs/IMPLEMENTATION_PLAN.md and docs/IMPLEMENTATION_STATUS.md. Use GitHub as shared source of truth; inspect current state before editing. No paid services, no invented business information, no production writes from previews.
+## Mandatory permanent directives (28 November 2026)
+
+Before every session read [the complete 19-section Master Design & Engineering Directive](docs/directives/MASTER-DESIGN-ENGINEERING-DIRECTIVE.md), [binding project interpretation](docs/directives/BINDING-INTERPRETATION.md), [Moin site rulebook](docs/directives/MOIN-SITE-DIRECTIVE.md), [engineering constitution](docs/directives/ENGINEERING-CONSTITUTION.md), [live requirement matrix](docs/qa/DESIGN-IMPLEMENTATION.md), [audit](docs/qa/AUDIT-0.md), [phased plan](docs/qa/IMPLEMENTATION-PLAN-1.md) and [handoff](docs/HANDOFF.md). Pull main first; inspect all refs/worktree and use only an isolated phase branch. Preserve stricter constraints, phase approvals, and production gates. The source docs are binding, not optional suggestions. Use [master execution prompt](docs/directives/MASTER-EXECUTION-PROMPT.md) to resume. Update matrix and append handoff at every phase boundary; never silently amend a directive.
