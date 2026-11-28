@@ -8,6 +8,7 @@ export async function measureCounter(page:Page){
     urls:[...new Set(performance.getEntriesByType('resource').map(e=>e.name))],
     inlineJS:[...document.querySelectorAll('script:not([src])')].map(e=>e.textContent??''),
     inlineCSS:[...document.querySelectorAll('style')].map(e=>e.textContent??''),
+    hero:(document.querySelector('.market-hero img') as HTMLImageElement|null)?.currentSrc??'',
     logo:(document.querySelector('.brand img') as HTMLImageElement|null)?.currentSrc??'',
   }));
   const origin=new URL(page.url()).origin;
@@ -18,6 +19,7 @@ export async function measureCounter(page:Page){
   const html=await page.request.get(page.url());
   let firstView=gz(await html.body());
   let logoBytes=0;
+  let heroBytes=0;
   const assets:{file:string;bytes:number;gzip:number}[]=[];
   for(const name of resources.urls){
     const url=new URL(name);
@@ -34,10 +36,13 @@ export async function measureCounter(page:Page){
     }
     if(extension==='css')css+=compressed;
     if(name===resources.logo)logoBytes=body.byteLength;
+    if(name===resources.hero)heroBytes=body.byteLength;
     assets.push({file:url.pathname,bytes:body.byteLength,gzip:compressed});
   }
-  const result={jsGzipBytes:js,cssGzipBytes:css,inlineCssBytes,firstViewStaticEstimateBytes:firstView,logoBytes,assets};
+  const result={jsGzipBytes:js,cssGzipBytes:css,inlineCssBytes,firstViewStaticEstimateBytes:firstView,logoBytes,heroBytes,assets};
   console.log('COUNTER_PAYLOAD '+JSON.stringify(result));
+  expect(heroBytes).toBeGreaterThan(0);
+  expect(heroBytes).toBeLessThanOrEqual(90000);
   expect(logoBytes).toBeGreaterThan(0);
   expect(logoBytes).toBeLessThanOrEqual(90000);
   expect(inlineCssBytes).toBeLessThanOrEqual(14000);

@@ -1,5 +1,10 @@
 ---
-import {Search,ShoppingBasket,Plus,Minus,X,Trash2,MessageCircle,Phone,Copy,ChevronRight,Check,Scale} from 'lucide-react';
+import {Search,ShoppingBasket,Plus,Minus,X,Trash2,MessageCircle,Phone,Copy,ChevronRight,Check,Scale,LayoutGrid,Utensils,ArrowRight} from 'lucide-react';
+import {Image} from 'astro:assets';
+import meal from '../assets/meal-inspiration.jpg';
+import chickenPhoto from '../assets/chicken-reference.jpg';
+import muttonPhoto from '../assets/mutton-reference.jpg';
+import familyMeal from '../assets/family-meal.jpg';
 import {products,categories} from '../data/products';
 import {shop,callUrl} from '../data/shop';
 import {MAX_LINE_NOTE,MAX_ORDER_NOTE,formatQuantity,type Product} from '../lib/order/order';
@@ -11,7 +16,19 @@ function unitHint(p:Product){
 }
 ---
 <section id="catalogue" tabindex="-1" class="catalogue" aria-labelledby="shop-title">
-  <div class="shop-head">
+  <section class="market-hero" aria-label="Welcome to Moin Mutton Mart">
+    <div class="market-hero-copy">
+      <p class="market-kicker">The Mallepally counter</p>
+      <p class="market-headline">Good meals<br/>start here.</p>
+      <p class="market-intro">Mutton, chicken and speciality cuts for your kitchen.</p>
+      <a class="market-cta" href="#cut-range">Explore cuts <ArrowRight size={17} aria-hidden="true"/></a>
+    </div>
+    <figure class="market-hero-photo">
+      <Image src={meal} width={480} format="webp" quality={78} alt="Illustrative bowl of biryani" loading="eager" fetchpriority="high" decoding="async"/>
+      <figcaption>Cooking inspiration</figcaption>
+    </figure>
+  </section>
+  <div class="shop-head" id="cut-range">
     <div class="counter-intro">
       <h1 id="shop-title">Choose your cuts</h1>
       <p class="counter-instruction">Add cuts. Review, then send on WhatsApp.</p>
@@ -20,8 +37,14 @@ function unitHint(p:Product){
   </div>
   <label class="search"><Search size={18} aria-hidden="true"/><span class="sr-only">Search the range</span><input data-role="search" type="search" dir="auto" placeholder="Search the range"/></label>
   <div class="categories" role="group" aria-label="Categories">
-    {categories.map(category=><button type="button" data-category-filter={category} aria-label={category} aria-pressed={category==='All'}>{category==='Speciality cuts'?'Speciality':category}</button>)}
+    {categories.map(category=><button type="button" data-category-filter={category} aria-label={category} aria-pressed={category==='All'}>
+      <span class="category-visual" aria-hidden="true">
+        {category==='Mutton'?<Image src={muttonPhoto} width={160} format="webp" quality={75} alt="" loading="eager" decoding="async"/>:category==='Chicken'?<Image src={chickenPhoto} width={160} format="webp" quality={75} alt="" loading="eager" decoding="async"/>:category==='All'?<LayoutGrid size={27}/>:<Utensils size={27}/>}
+      </span>
+      <span class="category-label">{category==='Speciality cuts'?'Speciality':category}</span>
+    </button>)}
   </div>
+  <p class="category-disclosure">Category photos are illustrative.</p>
   <div class="counter-groups" data-role="grid">
     {groups.map(group=><section class="counter-group" data-group={group.name} aria-labelledby={group.id}>
       <h2 class="group-title" id={group.id}>{group.name}</h2>
@@ -45,6 +68,10 @@ function unitHint(p:Product){
     </section>)}
   </div>
   <p class="no-results" data-role="no-results" hidden></p>
+  <section class="market-banner" aria-label="Meal planning">
+    <figure><Image src={familyMeal} width={480} format="webp" quality={74} alt="Illustrative chicken biryani with accompaniments" loading="lazy" decoding="async"/><figcaption>Cooking inspiration</figcaption></figure>
+    <div><p class="market-kicker">Make it your way</p><h2>From the counter to your kitchen.</h2><p>Choose your quantities and tell us your preparation preference in your request.</p><a href="#cut-range">Browse the range <ArrowRight size={16} aria-hidden="true"/></a></div>
+  </section>
   <details class="quantity-guide">
     <summary><Scale size={18} aria-hidden="true"/><span>Choosing quantities &amp; cuts</span><ChevronRight className="guide-chevron" size={18} aria-hidden="true"/></summary>
     <div class="guide-copy"><p>Choose by weight, piece or set as shown. These are requested quantities; the shop confirms the actual weight and charging unit.</p><p>Add your preparation preference in the review. The shop confirms whether it can provide the cut.</p></div>
