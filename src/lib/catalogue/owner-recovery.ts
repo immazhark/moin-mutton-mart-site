@@ -48,7 +48,7 @@ export function clearRecovery():void{
   try{sessionStorage.removeItem(RECOVERY_KEY);}catch{/* Storage may be unavailable. */}
 }
 export function storeRecovery(scope:RecoveryScope,intent:SaveIntent,products:readonly Product[],createdAt:number):boolean{
-  try{sessionStorage.setItem(RECOVERY_KEY,encodeRecovery(scope,intent,products,createdAt));return true;}
+  try{const now=Date.now();if(createdAt>now||now-createdAt>RECOVERY_TTL_MS){clearRecovery();return false;}sessionStorage.setItem(RECOVERY_KEY,encodeRecovery(scope,intent,products,createdAt));return true;}
   catch{return false;}
 }
 export function readRecovery(scope:RecoveryScope,products:readonly Product[]):{kind:'none'|'invalid'|'unavailable'}|{kind:'pending';record:RecoveryRecord}{

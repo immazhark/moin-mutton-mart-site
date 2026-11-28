@@ -26,7 +26,7 @@ export default function OwnerConsole(){
     try{
       const services=getFirebaseServices();
       if(!services){setAuth({kind:'unconfigured'});return;}
-      return onAuthStateChanged(services.auth,user=>{setAuth({kind:'ready',services,user});setAuthError('');},()=>setAuth({kind:'error'}));
+      return onAuthStateChanged(services.auth,user=>{if(!user)clearRecovery();setAuth({kind:'ready',services,user});setAuthError('');},()=>setAuth({kind:'error'}));
     }catch{setAuth({kind:'error'});}
   },[]);
   async function login(services:FirebaseServices){

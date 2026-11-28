@@ -2,4 +2,55 @@
 import '../styles/global.css';
 import {canonicalUrl,callUrl,shop} from '../data/shop';
 ---
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><link rel="canonical" href={canonicalUrl('/privacy/')}/><meta name="description" content="How Moin Mutton Mart handles your browser draft and WhatsApp request."/><title>Privacy · Moin Mutton Mart</title></head><body><main class="simple-page"><a href="/">← Back to the counter</a><h1>Your request, your choice.</h1><p>This notice explains the information used by the Moin Mutton Mart website and the choices available to you.</p><p>Your browser stores selected product IDs and quantities to restore your draft for 24 hours from the first item. Editing does not extend this period. Expired drafts are discarded when you return; stored data may remain while the site is closed. Prices, contact details and addresses are not saved in the draft. Notes stay in memory and are cleared on reload. Removing all items clears the saved list. There are no customer accounts or payments.</p><p>Continuing on WhatsApp opens a message you can review and send yourself. WhatsApp processes information under its own privacy terms. The shop receives it only if you send it.</p><p>Only include information needed for your request. Discuss your address directly with the shop if delivery is available.</p><h2>Your browser and choices</h2><p>The site requests the current public catalogue from Firebase when needed. Hosting and catalogue providers may process connection information such as IP addresses to deliver and secure the service. We do not add advertising or analytics trackers to this build.</p><p>Remove all selected items on the counter or clear this site’s browser data to remove the saved basket. Clearing the website data does not delete a message already sent to the shop.</p><h2>Shop administration</h2><p>Authorised shop staff sign in with Google. Firebase processes the sign-in and verifies membership. Catalogue updates record the administrator identifier, revision, timestamp and catalogue snapshot in a restricted audit record. A submitted save that has not been verified may be kept in the same browser tab for recovery for up to two hours from the first attempt; the record contains the project, administrator identifier and catalogue changes, not a password or sign-in token. Expired records are discarded when checked; browser storage may remain while a tab is suspended. Verified completion, access denial and explicit sign-out clear the recovery record when storage is available. Private exported backups stay on the device unless shared by the owner.</p><h2>Contact, correction and complaints</h2><p>To ask about information sent to the shop, request correction or deletion, withdraw a request or raise a privacy complaint, call <a href={callUrl}>{shop.phoneDisplay}</a>. The shop may need to verify your request and retain information where required for legitimate records. WhatsApp and Google account controls are separate from this website.</p><p>If you need help using the catalogue or requesting an accessible alternative, call <a href={callUrl}>{shop.phoneDisplay}</a>.</p></main></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex,nofollow"/><link rel="canonical" href={canonicalUrl('/privacy/')}/>
+  <meta name="description" content="How Moin Mutton Mart handles your browser draft and WhatsApp request."/><title>Privacy · Moin Mutton Mart</title>
+</head>
+<body>
+  <main class="simple-page privacy-page">
+    <a class="privacy-back" href="/">← Back to the counter</a>
+    <h1>Your request, your choice.</h1>
+    <p>We use only the information needed to prepare your request and manage the shop. You choose when to send your message.</p>
+    <section class="privacy-choice" aria-labelledby="choices">
+      <h2 id="choices">Your choices</h2>
+      <p>Clear the saved basket on this browser. This does not delete messages already sent to the shop.</p>
+      <button class="btn-secondary" type="button" data-clear-basket hidden>Clear saved basket</button>
+      <p role="status" data-clear-status></p>
+      <noscript><p>Remove this site’s stored data in your browser settings to clear the saved basket.</p></noscript>
+      <a href={callUrl}>Contact the shop about your information</a>
+    </section>
+    <section><h2>What stays on your device</h2>
+      <p>Your browser stores only selected product IDs and quantities for 24 hours from the first selection. Editing does not extend this period. Expired drafts are discarded when checked; stored data may remain while the site is closed.</p>
+      <p>Prices, contact details and addresses are not saved in the draft. Notes stay in memory and are cleared on reload or when the basket is emptied. There are no customer accounts or payments.</p>
+    </section>
+    <section><h2>When you use WhatsApp</h2>
+      <p>Continuing on WhatsApp opens a prepared message for you to review and send yourself. WhatsApp processes information under its own privacy terms. The shop receives your message only if you send it.</p>
+      <p>Only include information needed for your request. Discuss your address directly with the shop if delivery is available.</p>
+    </section>
+    <section><h2>Website services</h2>
+      <p>The site requests the current public catalogue from Firebase when needed. Hosting and catalogue providers may process connection information such as IP addresses to deliver and secure the service. We do not add advertising or analytics trackers to this build.</p>
+    </section>
+    <section><h2>Shop administration</h2>
+      <p>Authorised staff sign in with Google. Firebase processes the sign-in and verifies membership. Catalogue updates create a restricted audit record containing the administrator identifier, revision, timestamp and catalogue snapshot.</p>
+      <p>A submitted save that has not been verified may be recovered in the same browser tab for two hours from the first attempt. The record contains the project, administrator identifier and catalogue changes, not a password or sign-in token. Expired records are discarded when checked. Verified completion, access denial and sign-out clear the record when storage is available. Private exported backups stay on the device unless shared by the owner.</p>
+    </section>
+    <section><h2>Contact, correction and complaints</h2>
+      <p>To ask about information sent to the shop, request correction or deletion, withdraw a request, ask for an accessible alternative or raise a privacy complaint, call <a href={callUrl}>{shop.phoneDisplay}</a>. The shop may need to verify your request and retain information where required for legitimate records. WhatsApp and Google account controls are separate from this website.</p>
+    </section>
+  </main>
+</body>
+</html>
+<script>
+  import {STORAGE_KEY} from '../lib/order/storage';
+  const clear=document.querySelector<HTMLButtonElement>('[data-clear-basket]');
+  const status=document.querySelector<HTMLElement>('[data-clear-status]');
+  if(clear&&status){
+    clear.hidden=false;
+    clear.addEventListener('click',()=>{
+      try{localStorage.removeItem(STORAGE_KEY);status.textContent='Saved basket cleared on this browser.';}
+      catch{status.textContent='Browser storage is unavailable. Clear this site’s stored data in your browser settings.';}
+    });
+  }
+</script>
