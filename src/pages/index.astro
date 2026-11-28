@@ -1,6 +1,6 @@
 ---
 import { MapPin, Phone, MessageCircle } from 'lucide-react';
-import Catalogue from '../components/Catalogue';
+import Counter from '../components/Counter.astro';
 import {Image} from 'astro:assets';
 import logo from '../assets/logo.png';
 import '../styles/global.css';
@@ -32,7 +32,7 @@ import '../styles/global.css';
         <link rel="stylesheet" href="/no-js.css" />
         <section class="no-script-contact" aria-labelledby="direct-contact"><h2 id="direct-contact">Contact the counter</h2><p>JavaScript is off. Browse the range below and ask the shop directly about cuts, rates and availability.</p><a class="btn-primary" href="https://wa.me/918143730054" rel="noreferrer"><MessageCircle size={20} aria-hidden="true"/> Ask on WhatsApp</a></section>
       </noscript>
-      <Catalogue client:load />
+      <Counter />
       <section class="visit" aria-labelledby="visit-title">
         <h2 id="visit-title">Visit the shop</h2>
         <p>Mallepally, Hyderabad. Call to confirm directions, opening hours and collection.</p>

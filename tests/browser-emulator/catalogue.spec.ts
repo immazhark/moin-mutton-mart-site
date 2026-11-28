@@ -45,8 +45,6 @@ test('configured catalogue reviews changed rates, preserves blocked stock throug
   await page.setViewportSize({width:360,height:844});
   await page.goto('/');
   await expect(page.getByText('Current rates and stock · subject to confirmation')).toBeVisible({timeout:15000});
-  await page.waitForLoadState('networkidle');
-  await measureCounter(page);
   await page.getByRole('button',{name:'Add Mutton with bone',exact:true}).click();
   await page.getByRole('button',{name:'Review request'}).click();
   const sheet=page.getByRole('dialog');
@@ -109,4 +107,18 @@ test('configured catalogue reviews changed rates, preserves blocked stock throug
   expect((await page.request.get(base+'/public/catalogue')).ok()).toBe(true);
   expect((await page.request.get(base+'/public')).status()).toBe(403);
   expect((await page.request.get(base+'/admins/owner')).status()).toBe(403);
+});
+
+test('configured cold customer stays under the hard static payload budget',async({page})=>{
+  await seed(1,100000);
+  await page.route('**/*',route=>{
+    const url=new URL(route.request().url());
+    if(url.hostname==='127.0.0.1'&&['4322','8088'].includes(url.port))return route.continue();
+    return route.abort();
+  });
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  await expect(page.getByText('Current rates and stock · subject to confirmation')).toBeVisible({timeout:15000});
+  await page.waitForLoadState('networkidle');
+  await measureCounter(page);
 });
