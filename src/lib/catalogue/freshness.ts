@@ -6,12 +6,18 @@ export type CatalogueSnapshot={kind:'loading'}|{kind:'unavailable'}|{kind:'ready
 /** One read per in-flight request, no polling, no authoritative stale fallback. */
 export class CatalogueSession {
   private snapshot:CatalogueSnapshot={kind:'loading'};
+  // Retain only for conservative blocking, never as authoritative prices or available stock.
+  private lastKnown:Catalogue|null=null;
   private inflight:Promise<CatalogueSnapshot>|null=null;
   private listeners=new Set<()=>void>();
   constructor(private readonly read:()=>Promise<Catalogue>,private readonly now:()=>number=()=>Date.now()){}
   getSnapshot=()=>this.snapshot;
+  getLastKnownCatalogue=()=>this.lastKnown;
   subscribe=(listener:()=>void)=>{this.listeners.add(listener);return()=>{this.listeners.delete(listener);};};
-  private publish(value:CatalogueSnapshot){this.snapshot=value;for(const listener of this.listeners)listener();}
+  private publish(value:CatalogueSnapshot){
+    if(value.kind==='ready')this.lastKnown=value.catalogue;
+    this.snapshot=value;for(const listener of this.listeners)listener();
+  }
   needsRefresh():boolean{
     if(this.snapshot.kind!=='ready')return true;
     const elapsed=this.now()-this.snapshot.fetchedAt;

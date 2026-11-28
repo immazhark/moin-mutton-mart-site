@@ -13,7 +13,7 @@ import {
 } from '../lib/order/order';
 import Stepper from './Stepper';
 import {reviewChanges,requestEstimate,type CatalogueSnapshot} from '../lib/catalogue/freshness';
-import {assessQuantity,displayedRate} from '../lib/catalogue/contract';
+import {assessQuantity,displayedRate,type Catalogue} from '../lib/catalogue/contract';
 
 const FULFILMENT_OPTIONS: { value: Fulfilment; label: string }[] = [
   { value: 'pickup', label: 'Pickup' },
@@ -26,6 +26,8 @@ interface Props {
   products: readonly Product[];
   items: Selection[];
   live: CatalogueSnapshot;
+  /** Last server result for conservative negative constraints only. */
+  known: Catalogue|null;
   refresh: () => Promise<CatalogueSnapshot>;
   onChange: (id: string, delta: -1 | 1) => void;
   onRemove: (id: string) => void;
@@ -34,7 +36,7 @@ interface Props {
   onRequestClose: () => void;
 }
 
-export default function ReviewSheet({ dialogRef, products, items, live, refresh, onChange, onRemove, onNote, onClose, onRequestClose }: Props) {
+export default function ReviewSheet({ dialogRef, products, items, live, known, refresh, onChange, onRemove, onNote, onClose, onRequestClose }: Props) {
   const [fulfilment, setFulfilment] = useState<Fulfilment>('discuss');
   const [orderNote, setOrderNote] = useState('');
   const [copySession] = useState(() => new CopySession());
@@ -49,7 +51,7 @@ export default function ReviewSheet({ dialogRef, products, items, live, refresh,
   const currentMessage=useRef(message);
   const messageRevision=useRef(0);
   const current=live.kind==='ready'?live.catalogue:null;
-  const selectionState=current?reviewChanges(current,current,products,items):null;
+  const selectionState=known?reviewChanges(known,known,products,items):null;
   const blocked=selectionState?.kind==='blocked';
   const validGrant=grant&&grant.key===message&&grant.snapshot===live&&!blocked?grant:null;
   const canLink=validGrant!==null&&linkFits(validGrant.message);
@@ -76,6 +78,10 @@ export default function ReviewSheet({ dialogRef, products, items, live, refresh,
       const next=await refresh();
       if(currentMessage.current!==key||messageRevision.current!==revision||!dialogRef.current?.open)return;
       if(next.kind!=='ready'){
+        if(blocked){
+          setReviewNotice({key,text:'Previously restricted selections could not be rechecked. Change or remove the affected items, retry, or call the shop.'});
+          return;
+        }
         setGrant({key,snapshot:next,at:Date.now(),message:key});
         setReviewNotice({key,text:'Live rates and availability could not be checked. You can send an unpriced enquiry and ask the shop to confirm.'});
         return;
@@ -125,8 +131,8 @@ export default function ReviewSheet({ dialogRef, products, items, live, refresh,
           <ul className="lines">
             {items.map((s) => {
               const p = products.find((x) => x.id === s.productId)!;
-              const assessment=current?assessQuantity(current,p,s.quantity):null;
-              const next=current?assessQuantity(current,p,s.quantity+p.step):null;
+              const assessment=known?assessQuantity(known,p,s.quantity):null;
+              const next=known?assessQuantity(known,p,s.quantity+p.step):null;
               const rate=current&&p.pricingBasis?displayedRate(current,p.id):null;
               const chips = p.cuts ?? [];
               const showOther = chips.length === 0 || otherOpen.has(p.id) || (s.note !== '' && !chips.includes(s.note));
@@ -140,7 +146,7 @@ export default function ReviewSheet({ dialogRef, products, items, live, refresh,
                   </div>
                   <Stepper product={p} quantity={s.quantity} canIncrease={next?.kind!=='blocked'} onChange={(d) => onChange(p.id, d)} />
                   {rate?.kind==='visible'&&p.pricingBasis&&<p className="unit-hint">{new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(rate.pricePaise/100)} / {p.pricingBasis}</p>}
-                  {assessment?.kind==='blocked'&&<p className="qualify" role="alert">{assessment.reason==='insufficient_stock'?'Requested quantity exceeds current stock. Reduce or remove this item.':'Not currently requestable. Remove this item or contact the shop.'}</p>}
+                  {assessment?.kind==='blocked'&&<p className="qualify" role="alert">{!current?'Previously restricted. Check again, reduce or remove this item, or call the shop.':assessment.reason==='insufficient_stock'?'Requested quantity exceeds current stock. Reduce or remove this item.':'Not currently requestable. Check again, remove this item or contact the shop.'}</p>}
                   {chips.length > 0 && (
                     <div className="chips" role="group" aria-label={`Cut for ${p.name}`}>
                       {chips.map((c) => (
@@ -202,7 +208,7 @@ export default function ReviewSheet({ dialogRef, products, items, live, refresh,
           ) : validGrant ? (
             <p className="qualify" role="alert">This request is too long for a WhatsApp link. Copy the unpriced request or call the shop.</p>
           ) : (
-            <button type="button" className="btn-primary whatsapp" disabled={checking||blocked} onClick={()=>void checkLatest()}>
+            <button type="button" className="btn-primary whatsapp" disabled={checking} onClick={()=>void checkLatest()}>
               <MessageCircle size={20} aria-hidden="true"/> {checking?'Checking latest information…':'Check latest rates & availability'}
             </button>
           )}

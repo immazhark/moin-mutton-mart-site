@@ -19,6 +19,7 @@ export default function Catalogue() {
   }));
   const live = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const current = live.kind === 'ready' ? live.catalogue : null;
+  const known = session.getLastKnownCatalogue();
   useEffect(() => {
     void session.refresh();
     const onVisible = () => {
@@ -80,8 +81,8 @@ export default function Catalogue() {
       const quantity = (old?.quantity ?? 0) + delta * p.step;
       if (quantity <= 0) return prev.filter((s) => s.productId !== id);
       if (quantity > p.max) return prev;
-      const latest = session.getSnapshot();
-      if (delta > 0 && latest.kind === 'ready' && assessQuantity(latest.catalogue,p,quantity).kind === 'blocked') return prev;
+      const latest = session.getLastKnownCatalogue();
+      if (delta > 0 && latest && assessQuantity(latest,p,quantity).kind === 'blocked') return prev;
       return old ? prev.map((s) => (s.productId === id ? { ...s, quantity } : s)) : [...prev, { productId: id, quantity, note: '' }];
     });
   }
@@ -176,11 +177,11 @@ export default function Catalogue() {
         <div className="product-grid">
           {visible.map((p) => {
             const quantity=items.find(s=>s.productId===p.id)?.quantity;
-            const next=current?assessQuantity(current,p,(quantity??0)+p.step):null;
+            const next=known?assessQuantity(known,p,(quantity??0)+p.step):null;
             const rate=current&&p.pricingBasis?displayedRate(current,p.id):null;
             const offer=current?.offers[p.id];
             const blocked=next?.kind==='blocked';
-            const availabilityText=!current?'Confirm with shop':!current.acceptingRequests?'Requests paused':!offer?.enabled?'Not listed today':offer.availability==='sold_out'||offer.stockQuantity===0?'Sold out':offer.availability==='ask'||offer.stockQuantity===null?'Confirm availability':blocked?'Quantity limit':'Available';
+            const availabilityText=!current?(blocked?'Previously restricted · check with shop':'Confirm with shop'):!current.acceptingRequests?'Requests paused':!offer?.enabled?'Not listed today':offer.availability==='sold_out'||offer.stockQuantity===0?'Sold out':offer.availability==='ask'||offer.stockQuantity===null?'Confirm availability':blocked?'Quantity limit':'Available';
             return <ProductCard key={p.id} product={p} quantity={quantity} onChange={change}
               canIncrease={!blocked}
               rateText={rate?.kind==='visible'&&p.pricingBasis?new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(rate.pricePaise/100)+' / '+p.pricingBasis:'Ask for today’s rate'}
@@ -208,6 +209,7 @@ export default function Catalogue() {
         products={products}
         items={items}
         live={live}
+        known={known}
         refresh={session.refresh.bind(session)}
         onChange={change}
         onRemove={(id) => setItems((prev) => prev.filter((s) => s.productId !== id))}
